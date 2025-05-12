@@ -1,0 +1,2 @@
+D:/Moblie_NC/chichanka-perfume-new/android/app/.cxx/Debug/6k6u552a/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/Moblie_NC/chichanka-perfume-new/android/app/.cxx/Debug/6k6u552a/armeabi-v7a/CMakeFiles/rebuild_cache.dir
