@@ -7,15 +7,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:image_card/image_card.dart';
+import '../models/category_api_model.dart';
+import '../services/category_service.dart';
+import '../config.dart';
 
 class CategoriesWidget extends StatelessWidget {
   const CategoriesWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: FirebaseFirestore.instance.collection('categories').get(),
-      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+    return FutureBuilder<List<CategoryApiModel>>(
+      future: CategoryService.fetchCategories(),
+      builder: (BuildContext context, AsyncSnapshot<List<CategoryApiModel>> snapshot) {
         if (snapshot.hasError) {
           return Center(
             child: Text("Lỗi"),
@@ -30,60 +33,51 @@ class CategoriesWidget extends StatelessWidget {
           );
         }
 
-        if (snapshot.data!.docs.isEmpty) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(
             child: Text("Không tìm thấy dữ liệu!"),
           );
         }
 
-        if (snapshot.data != null) {
-          return Container(
-            height: Get.height / 5.0,
-            child: ListView.builder(
-              itemCount: snapshot.data!.docs.length,
-              shrinkWrap: true,
-              scrollDirection: Axis.horizontal,
-              itemBuilder: (context, index) {
-                CategoriesModel categoriesModel = CategoriesModel(
-                  categoryId: snapshot.data!.docs[index]['categoryId'],
-                  categoryImg: snapshot.data!.docs[index]['categoryImg'],
-                  categoryName: snapshot.data!.docs[index]['categoryName'],
-                  createdAt: snapshot.data!.docs[index]['createdAt'],
-                  updatedAt: snapshot.data!.docs[index]['updatedAt'],
-                );
-                return Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => Get.to(() => AllSingleCategoryProductsScreen(
-                          categoryId: categoriesModel.categoryId)),
-                      child: Padding(
-                        padding: EdgeInsets.all(5.0),
-                        child: Container(
-                          child: FillImageCard(
-                            borderRadius: 10.0,
-                            width: Get.width / 3.0,
-                            heightImage: Get.height / 10,
-                            imageProvider: CachedNetworkImageProvider(
-                              categoriesModel.categoryImg,
-                            ),
-                            title: Center(
-                              child: Text(
-                                categoriesModel.categoryName,
-                                style: TextStyle(fontSize: 12.0),
-                              ),
+        final categories = snapshot.data!;
+        return Container(
+          height: Get.height / 5.0,
+          child: ListView.builder(
+            itemCount: categories.length,
+            shrinkWrap: true,
+            scrollDirection: Axis.horizontal,
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              return Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Get.to(() => AllSingleCategoryProductsScreen(
+                        categoryId: category.categoryId.toString())),
+                    child: Padding(
+                      padding: EdgeInsets.all(5.0),
+                      child: Container(
+                        child: FillImageCard(
+                          borderRadius: 10.0,
+                          width: Get.width / 3.0,
+                          heightImage: Get.height / 10,
+                          imageProvider: CachedNetworkImageProvider(
+                            '$BASE_URL/${category.image}',
+                          ),
+                          title: Center(
+                            child: Text(
+                              category.name,
+                              style: TextStyle(fontSize: 12.0),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ],
-                );
-              },
-            ),
-          );
-        }
-
-        return Container();
+                  ),
+                ],
+              );
+            },
+          ),
+        );
       },
     );
   }
