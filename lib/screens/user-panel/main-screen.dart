@@ -25,6 +25,7 @@ import 'package:intl/intl.dart';
 import 'package:chichanka_perfume/models/product_api_model.dart';
 // Ensure that the file product-api_model.dart defines a class named ProductApiModel.
 import 'package:chichanka_perfume/services/product_service.dart';
+import '../../config.dart'; // import BASE_URL
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -256,7 +257,7 @@ class _MainScreenState extends State<MainScreen>
                             width: double.infinity,
                             heightImage: Get.height / 5,
                             imageProvider: CachedNetworkImageProvider(
-                              'http://10.0.2.2:7072/' + productModel.img,
+                              '$BASE_URL/' + productModel.img,
                             ),
                             title: Center(
                               child: Text(
@@ -623,7 +624,8 @@ class AllProductsWidget extends StatelessWidget {
                         topRight: Radius.circular(12),
                       ),
                       child: Image(
-                        image: CachedNetworkImageProvider('http://10.0.2.2:7072/' + product.img),
+                        image: CachedNetworkImageProvider(
+                            '$BASE_URL/' + product.img),
                         height: 150,
                         width: 150,
                         fit: BoxFit.cover,
@@ -707,8 +709,7 @@ class RecentProductsWidget extends StatelessWidget {
                       ),
                       child: Image(
                         image: CachedNetworkImageProvider(
-                            // product.productImages[0]),
-                            'http://10.0.2.2:7072/' + product.img),
+                            '$BASE_URL/' + product.img),
                         height: 150,
                         width: 150,
                         fit: BoxFit.cover,

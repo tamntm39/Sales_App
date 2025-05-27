@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config.dart'; // import BASE_URL from Dart config
 
 class AuthService {
   // Đổi baseUrl cho phù hợp môi trường:
@@ -10,8 +11,7 @@ class AuthService {
   // Postman trên máy tính:
   // final String baseUrl = 'http://localhost:7072/api';
 
-  final String baseUrl =
-      'http://10.0.2.2:7072/api'; // Đổi lại khi build release hoặc test thiết bị thật
+  final String baseUrl = '$BASE_URL/api'; // use shared BASE_URL
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
