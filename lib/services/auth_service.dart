@@ -1,19 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../config.dart'; // import BASE_URL from Dart config
+import '../config.dart';
 
-class AuthService {
-  // Đổi baseUrl cho phù hợp môi trường:
-  // Android emulator:
-  // final String baseUrl = 'http://10.0.2.2:7072/api';
-  // Thiết bị thật (điền đúng IP LAN của máy tính):
-  // final String baseUrl = 'http://192.168.x.x:7072/api';
-  // Postman trên máy tính:
-  // final String baseUrl = 'http://localhost:7072/api';
+abstract class IAuthRepository {
+  Future<Map<String, dynamic>> login(String email, String password);
+}
 
-  final String baseUrl = '$BASE_URL/api'; // use shared BASE_URL
-
+class AuthRepository implements IAuthRepository {
+  @override
   Future<Map<String, dynamic>> login(String email, String password) async {
+    final baseUrl = '$BASE_URL/api';
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/customer/login'),
@@ -31,8 +27,15 @@ class AuthService {
         };
       }
     } catch (e) {
-      print('AuthService login error: $e');
       return {'success': false, 'message': 'Lỗi kết nối: $e'};
     }
+  }
+}
+
+class AuthService {
+  static final IAuthRepository _repo = AuthRepository();
+
+  Future<Map<String, dynamic>> login(String email, String password) {
+    return _repo.login(email, password);
   }
 }
