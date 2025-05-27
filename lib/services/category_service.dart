@@ -3,8 +3,13 @@ import 'package:http/http.dart' as http;
 import '../config.dart';
 import '../models/category_api_model.dart';
 
-class CategoryService {
-  static Future<List<CategoryApiModel>> fetchCategories() async {
+abstract class ICategoryRepository {
+  Future<List<CategoryApiModel>> fetchCategories();
+}
+
+class CategoryRepository implements ICategoryRepository {
+  @override
+  Future<List<CategoryApiModel>> fetchCategories() async {
     final url = '$BASE_URL/api/Category/GetAll';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
@@ -19,5 +24,13 @@ class CategoryService {
     } else {
       throw Exception('Lỗi server: ${response.statusCode}');
     }
+  }
+}
+
+class CategoryService {
+  static final ICategoryRepository _repo = CategoryRepository();
+
+  static Future<List<CategoryApiModel>> fetchCategories() {
+    return _repo.fetchCategories();
   }
 }
