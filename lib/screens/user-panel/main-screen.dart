@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:chichanka_perfume/controllers/cart-controller.dart';
 import 'package:chichanka_perfume/screens/user-panel/all-brands-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/all-categories-screen.dart';
@@ -20,7 +22,9 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_card/image_card.dart';
 import 'package:intl/intl.dart';
-import 'package:chichanka_perfume/models/product-model.dart';
+import 'package:chichanka_perfume/models/product_api_model.dart';
+// Ensure that the file product-api_model.dart defines a class named ProductApiModel.
+import 'package:chichanka_perfume/services/product_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -36,7 +40,10 @@ class _MainScreenState extends State<MainScreen>
   int _selectedIndex = 1;
   AnimationController? _controller;
   Animation<double>? _animation;
-  final List<ProductModel> recentlyViewedProducts = [];
+  final List<ProductApiModel> recentlyViewedProducts = [];
+  List<ProductApiModel> allProducts = [];
+  bool isLoadingProducts = false;
+  String productLoadError = '';
 
   @override
   void initState() {
@@ -48,15 +55,29 @@ class _MainScreenState extends State<MainScreen>
     _animation = Tween<double>(begin: 1, end: 1).animate(
       CurvedAnimation(parent: _controller!, curve: Curves.easeInOut),
     );
+    fetchProducts();
   }
 
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
+  Future<void> fetchProducts() async {
+    setState(() {
+      isLoadingProducts = true;
+      productLoadError = '';
+    });
+    try {
+      final products = await ProductService.fetchProducts();
+      setState(() {
+        allProducts = products;
+        isLoadingProducts = false;
+      });
+    } catch (e) {
+      setState(() {
+        productLoadError = e.toString();
+        isLoadingProducts = false;
+      });
+    }
   }
 
-  void addToRecentlyViewed(ProductModel product) {
+  void addToRecentlyViewed(ProductApiModel product) {
     setState(() {
       recentlyViewedProducts
           .removeWhere((item) => item.productId == product.productId);
@@ -72,11 +93,7 @@ class _MainScreenState extends State<MainScreen>
     return '${formatter.format(double.parse(price))} đ';
   }
 
-  List<ProductModel> filterProducts(List<QueryDocumentSnapshot> docs) {
-    List<ProductModel> products = docs.map((doc) {
-      return ProductModel.fromMap(doc.data() as Map<String, dynamic>);
-    }).toList();
-
+  List<ProductApiModel> filterProducts(List<ProductApiModel> products) {
     if (searchQuery.isNotEmpty) {
       products = products
           .where((product) => product.productName
@@ -194,24 +211,17 @@ class _MainScreenState extends State<MainScreen>
                 },
               ),
             ),
-            if (searchQuery.isNotEmpty)
-              FutureBuilder<QuerySnapshot>(
-                future: FirebaseFirestore.instance.collection('products').get(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return const Center(child: Text('Có lỗi xảy ra'));
-                  }
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return SizedBox(
-                      height: Get.height / 5,
-                      child: const Center(child: CircularProgressIndicator()),
-                    );
-                  }
-                  if (snapshot.data?.docs.isEmpty ?? true) {
-                    return const Center(
-                        child: Text('Không tìm thấy sản phẩm!'));
-                  }
-                  final filteredProducts = filterProducts(snapshot.data!.docs);
+            if (isLoadingProducts)
+              SizedBox(
+                height: Get.height / 5,
+                child: const Center(child: CircularProgressIndicator()),
+              )
+            else if (productLoadError.isNotEmpty)
+              Center(child: Text(productLoadError))
+            else if (searchQuery.isNotEmpty)
+              Builder(
+                builder: (context) {
+                  final filteredProducts = filterProducts(allProducts);
                   if (filteredProducts.isEmpty) {
                     return const Center(
                         child: Text('Không tìm thấy sản phẩm!'));
@@ -233,8 +243,8 @@ class _MainScreenState extends State<MainScreen>
                       return GestureDetector(
                         onTap: () {
                           addToRecentlyViewed(productModel);
-                          Get.to(() =>
-                              ProductDetailsScreen(productModel: productModel));
+                          // Get.to(() =>
+                          //     ProductDetailsScreen(productModel: productModel));
                         },
                         child: Container(
                           decoration: BoxDecoration(
@@ -246,7 +256,7 @@ class _MainScreenState extends State<MainScreen>
                             width: double.infinity,
                             heightImage: Get.height / 5,
                             imageProvider: CachedNetworkImageProvider(
-                              productModel.productImages[0],
+                              'http://10.0.2.2:7072/' + productModel.img,
                             ),
                             title: Center(
                               child: Text(
@@ -262,7 +272,8 @@ class _MainScreenState extends State<MainScreen>
                             ),
                             footer: Center(
                               child: Text(
-                                formatPrice(productModel.fullPrice),
+                                formatPrice(
+                                    productModel.priceOutput.toString()),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.red,
@@ -394,7 +405,9 @@ class _MainScreenState extends State<MainScreen>
                             buttonText: "Xem thêm >",
                           ),
                           AllProductsWidget(
-                              addToRecentlyViewed: addToRecentlyViewed),
+                            addToRecentlyViewed: addToRecentlyViewed,
+                            products: allProducts,
+                          ),
                         ],
                       ),
                     ),
@@ -564,124 +577,99 @@ class _MainScreenState extends State<MainScreen>
 }
 
 class AllProductsWidget extends StatelessWidget {
-  final Function(ProductModel) addToRecentlyViewed;
+  final Function(ProductApiModel) addToRecentlyViewed;
+  final List<ProductApiModel> products;
 
-  const AllProductsWidget({required this.addToRecentlyViewed});
+  const AllProductsWidget({
+    required this.addToRecentlyViewed,
+    required this.products,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Định dạng tiền tệ giống FlashSaleWidget
     final NumberFormat currencyFormat = NumberFormat('#,###', 'vi_VN');
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('products').snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    final displayProducts = products.take(4).toList();
 
-        final products = snapshot.data!.docs
-            .map((doc) =>
-                ProductModel.fromMap(doc.data() as Map<String, dynamic>))
-            .toList()
-            .take(4)
-            .toList();
+    if (displayProducts.isEmpty) {
+      return const Center(child: Text('Không có sản phẩm nào.'));
+    }
 
-        return Container(
-          height: 300,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: products.length,
-            itemBuilder: (context, index) {
-              final product = products[index];
-              return GestureDetector(
-                onTap: () {
-                  addToRecentlyViewed(product);
-                  Get.to(() => ProductDetailsScreen(productModel: product));
-                },
-                child: Container(
-                  width: 150,
-                  margin: const EdgeInsets.all(8),
-                  child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(12),
-                            topRight: Radius.circular(12),
-                          ),
-                          child: Image(
-                            image: CachedNetworkImageProvider(
-                                product.productImages[0]),
-                            height: 150,
-                            width: 150,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  product.productName,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                                const SizedBox(height: 8),
-                                // Hiển thị fullPrice với gạch ngang nếu có salePrice
-                                if (product.isSale &&
-                                    product.salePrice.isNotEmpty)
-                                  Text(
-                                    '${currencyFormat.format(double.parse(product.fullPrice))} đ',
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.grey,
-                                      decoration: TextDecoration.lineThrough,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                const SizedBox(height: 2),
-                                // Hiển thị salePrice nếu có, nếu không thì hiển thị fullPrice
-                                Text(
-                                  product.isSale && product.salePrice.isNotEmpty
-                                      ? '${currencyFormat.format(double.parse(product.salePrice))} đ'
-                                      : '${currencyFormat.format(double.parse(product.fullPrice))} đ',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: product.isSale
-                                        ? Colors.red
-                                        : Colors.black,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
+    return Container(
+      height: 300,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: displayProducts.length,
+        itemBuilder: (context, index) {
+          final product = displayProducts[index];
+          return GestureDetector(
+            onTap: () {
+              addToRecentlyViewed(product);
+              // Nếu ProductDetailsScreen cần ProductModel cũ, cần sửa lại để nhận ProductApiModel hoặc chuyển đổi phù hợp
+              // Get.to(() => ProductDetailsScreen(productModel: product));
             },
-          ),
-        );
-      },
+            child: Container(
+              width: 150,
+              margin: const EdgeInsets.all(8),
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                      child: Image(
+                        image: CachedNetworkImageProvider('http://10.0.2.2:7072/' + product.img),
+                        height: 150,
+                        width: 150,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              product.productName,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${currencyFormat.format(product.priceOutput)} đ',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
 
 class RecentProductsWidget extends StatelessWidget {
-  final List<ProductModel> recentlyViewedProducts;
+  final List<ProductApiModel> recentlyViewedProducts;
 
   const RecentProductsWidget({required this.recentlyViewedProducts});
 
@@ -699,7 +687,7 @@ class RecentProductsWidget extends StatelessWidget {
               final mainScreenState =
                   context.findAncestorStateOfType<_MainScreenState>();
               mainScreenState?.addToRecentlyViewed(product);
-              Get.to(() => ProductDetailsScreen(productModel: product));
+              // Get.to(() => ProductDetailsScreen(productModel: product));
             },
             child: Container(
               width: 150,
@@ -719,7 +707,8 @@ class RecentProductsWidget extends StatelessWidget {
                       ),
                       child: Image(
                         image: CachedNetworkImageProvider(
-                            product.productImages[0]),
+                            // product.productImages[0]),
+                            'http://10.0.2.2:7072/' + product.img),
                         height: 150,
                         width: 150,
                         fit: BoxFit.cover,
@@ -739,7 +728,7 @@ class RecentProductsWidget extends StatelessWidget {
                           SizedBox(height: 8),
                           Text(
                             NumberFormat.currency(locale: 'vi_VN', symbol: 'đ')
-                                .format(double.parse(product.fullPrice)),
+                                .format(product.priceOutput),
                             style: TextStyle(color: Colors.red),
                             textAlign: TextAlign.center,
                           ),

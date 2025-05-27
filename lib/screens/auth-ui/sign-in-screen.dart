@@ -217,61 +217,62 @@ class _SigninScreenState extends State<SignInScreen> {
         ),
         child: TextButton(
           onPressed: () async {
-            String email = userEmail.text.trim();
-            String password = userPassword.text.trim();
+            Get.offAll(() => MainScreen());
+            // String email = userEmail.text.trim();
+            // String password = userPassword.text.trim();
 
-            if (email.isEmpty || password.isEmpty) {
-              Get.snackbar(
-                "Lỗi",
-                "Hãy nhập đầy đủ thông tin",
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: AppConstant.appScendoryColor,
-                colorText: AppConstant.appTextColor,
-              );
-            } else {
-              // Gọi API đăng nhập
-              final result = await _authService.login(email, password);
+            // if (email.isEmpty || password.isEmpty) {
+            //   Get.snackbar(
+            //     "Lỗi",
+            //     "Hãy nhập đầy đủ thông tin",
+            //     snackPosition: SnackPosition.BOTTOM,
+            //     backgroundColor: AppConstant.appScendoryColor,
+            //     colorText: AppConstant.appTextColor,
+            //   );
+            // } else {
+            //   // Gọi API đăng nhập
+            //   final result = await _authService.login(email, password);
 
-              if (result['success'] == true) {
-                // final userData = result['data'];
-                // if (userData['emailVerified'] == true) {
-                // if (userData['isAdmin'] == true) {
-                //   Get.snackbar(
-                //     "Quản trị viên đăng nhập thành công",
-                //     "Đăng nhập thành công!",
-                //     snackPosition: SnackPosition.BOTTOM,
-                //     backgroundColor: AppConstant.navy,
-                //     colorText: AppConstant.appTextColor,
-                //   );
-                //   Get.offAll(() => AdminMainScreen());
-                // } else {
-                Get.offAll(() => MainScreen());
-                Get.snackbar(
-                  "Người dùng đăng nhập thành công",
-                  "Đăng nhập thành công!",
-                  backgroundColor: Colors.green,
-                  colorText: AppConstant.appTextColor,
-                );
-                // }
-                // } else {
-                //   Get.snackbar(
-                //     "Lỗi",
-                //     "Hãy xác thực email của bạn",
-                //     snackPosition: SnackPosition.BOTTOM,
-                //     backgroundColor: AppConstant.navy,
-                //     colorText: AppConstant.appTextColor,
-                //   );
-                // }
-              } else {
-                Get.snackbar(
-                  "Lỗi",
-                  result['message'] ?? "Hãy thử lại",
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: AppConstant.navy,
-                  colorText: AppConstant.appTextColor,
-                );
-              }
-            }
+            //   if (result['success'] == true) {
+            //     // final userData = result['data'];
+            //     // if (userData['emailVerified'] == true) {
+            //     // if (userData['isAdmin'] == true) {
+            //     //   Get.snackbar(
+            //     //     "Quản trị viên đăng nhập thành công",
+            //     //     "Đăng nhập thành công!",
+            //     //     snackPosition: SnackPosition.BOTTOM,
+            //     //     backgroundColor: AppConstant.navy,
+            //     //     colorText: AppConstant.appTextColor,
+            //     //   );
+            //     //   Get.offAll(() => AdminMainScreen());
+            //     // } else {
+            //     Get.offAll(() => MainScreen());
+            //     Get.snackbar(
+            //       "Người dùng đăng nhập thành công",
+            //       "Đăng nhập thành công!",
+            //       backgroundColor: Colors.green,
+            //       colorText: AppConstant.appTextColor,
+            //     );
+            //     // }
+            //     // } else {
+            //     //   Get.snackbar(
+            //     //     "Lỗi",
+            //     //     "Hãy xác thực email của bạn",
+            //     //     snackPosition: SnackPosition.BOTTOM,
+            //     //     backgroundColor: AppConstant.navy,
+            //     //     colorText: AppConstant.appTextColor,
+            //     //   );
+            //     // }
+            //   } else {
+            //     Get.snackbar(
+            //       "Lỗi",
+            //       result['message'] ?? "Hãy thử lại",
+            //       snackPosition: SnackPosition.BOTTOM,
+            //       backgroundColor: AppConstant.navy,
+            //       colorText: AppConstant.appTextColor,
+            //     );
+            //   }
+            // }
           },
           child: Text(
             'ĐĂNG NHẬP',
