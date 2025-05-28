@@ -11,6 +11,7 @@ import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:chichanka_perfume/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -233,18 +234,10 @@ class _SigninScreenState extends State<SignInScreen> {
               final result = await _authService.login(email, password);
 
               if (result['success'] == true) {
-                // final userData = result['data'];
-                // if (userData['emailVerified'] == true) {
-                // if (userData['isAdmin'] == true) {
-                //   Get.snackbar(
-                //     "Quản trị viên đăng nhập thành công",
-                //     "Đăng nhập thành công!",
-                //     snackPosition: SnackPosition.BOTTOM,
-                //     backgroundColor: AppConstant.navy,
-                //     colorText: AppConstant.appTextColor,
-                //   );
-                //   Get.offAll(() => AdminMainScreen());
-                // } else {
+                final userData = result['data'];
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setInt('customerId', userData['customerId']); // Lưu customerId
+
                 Get.offAll(() => MainScreen());
                 Get.snackbar(
                   "Người dùng đăng nhập thành công",
@@ -252,16 +245,6 @@ class _SigninScreenState extends State<SignInScreen> {
                   backgroundColor: Colors.green,
                   colorText: AppConstant.appTextColor,
                 );
-                // }
-                // } else {
-                //   Get.snackbar(
-                //     "Lỗi",
-                //     "Hãy xác thực email của bạn",
-                //     snackPosition: SnackPosition.BOTTOM,
-                //     backgroundColor: AppConstant.navy,
-                //     colorText: AppConstant.appTextColor,
-                //   );
-                // }
               } else {
                 Get.snackbar(
                   "Lỗi",

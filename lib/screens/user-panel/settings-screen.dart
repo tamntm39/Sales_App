@@ -2,10 +2,11 @@ import 'package:chichanka_perfume/models/user-model.dart';
 import 'package:chichanka_perfume/screens/user-panel/all-products-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chichanka_perfume/services/customer/get_customer_service.dart';
+import 'package:chichanka_perfume/services/customer/update_customer_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -15,10 +16,10 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _notificationsEnabled = true; // Default notification state
-  bool _isDarkMode = false; // Default theme state
+  bool _notificationsEnabled = true;
+  bool _isDarkMode = false;
   UserModel? _userModel;
-  int _selectedIndex = 2; // Mặc định chọn "Cài đặt"
+  int _selectedIndex = 2;
 
   @override
   void initState() {
@@ -28,16 +29,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadUserData() async {
     try {
-      User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        DocumentSnapshot doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .get();
-        if (doc.exists) {
+      final prefs = await SharedPreferences.getInstance();
+      int? customerId = prefs.getInt('customerId');
+      if (customerId != null) {
+        final result = await GetCustomerService().getCustomer(customerId);
+        if (result['success']) {
           setState(() {
-            _userModel = UserModel.fromMap(doc.data() as Map<String, dynamic>);
+            _userModel = UserModel.fromMap(result['data']);
           });
+        } else {
+          Get.snackbar("Lỗi", result['message'] ?? "Không thể tải thông tin người dùng");
         }
       }
     } catch (e) {
@@ -76,14 +77,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         TextEditingController(text: _userModel?.username);
     final TextEditingController phoneController =
         TextEditingController(text: _userModel?.phone);
+    final TextEditingController emailController =
+        TextEditingController(text: _userModel?.email);
     final TextEditingController addressController =
         TextEditingController(text: _userModel?.userAddress);
-    final TextEditingController streetController =
-        TextEditingController(text: _userModel?.street);
-    final TextEditingController cityController =
-        TextEditingController(text: _userModel?.city);
-    final TextEditingController countryController =
-        TextEditingController(text: _userModel?.country);
 
     showDialog(
       context: context,
@@ -96,28 +93,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 TextField(
                   controller: usernameController,
-                  decoration:
-                      const InputDecoration(labelText: "Tên người dùng"),
+                  decoration: const InputDecoration(labelText: "Tên người dùng"),
                 ),
                 TextField(
                   controller: phoneController,
                   decoration: const InputDecoration(labelText: "Số điện thoại"),
                 ),
                 TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: "Email"),
+                ),
+                TextField(
                   controller: addressController,
                   decoration: const InputDecoration(labelText: "Địa chỉ"),
-                ),
-                TextField(
-                  controller: streetController,
-                  decoration: const InputDecoration(labelText: "Đường"),
-                ),
-                TextField(
-                  controller: cityController,
-                  decoration: const InputDecoration(labelText: "Thành phố"),
-                ),
-                TextField(
-                  controller: countryController,
-                  decoration: const InputDecoration(labelText: "Quốc gia"),
                 ),
               ],
             ),
@@ -130,31 +118,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  User? currentUser = FirebaseAuth.instance.currentUser;
-                  if (currentUser != null) {
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(currentUser.uid)
-                        .update({
-                      'username': usernameController.text,
-                      'phone': phoneController.text,
-                      'userAddress': addressController.text,
-                      'street': streetController.text,
-                      'city': cityController.text,
-                      'country': countryController.text,
-                    });
-                    setState(() {
-                      _userModel = _userModel?.copyWith(
-                        username: usernameController.text,
-                        phone: phoneController.text,
-                        userAddress: addressController.text,
-                        street: streetController.text,
-                        city: cityController.text,
-                        country: countryController.text,
-                      );
-                    });
-                    Get.snackbar("Thành công", "Thông tin đã được cập nhật");
-                    Navigator.pop(context);
+                  final prefs = await SharedPreferences.getInstance();
+                  int? customerId = prefs.getInt('customerId');
+                  if (customerId != null) {
+                    final result = await UpdateCustomerService().updateCustomer(
+                      customerId: customerId.toString(),
+                      fullname: usernameController.text,
+                      phone: phoneController.text,
+                      email: emailController.text,
+                      address: addressController.text,
+                    );
+                    if (result['success']) {
+                      setState(() {
+                        _userModel = _userModel?.copyWith(
+                          username: usernameController.text,
+                          phone: phoneController.text,
+                          email: emailController.text,
+                          userAddress: addressController.text,
+                        );
+                      });
+                      Get.snackbar("Thành công", "Thông tin đã được cập nhật");
+                      Navigator.pop(context);
+                    } else {
+                      Get.snackbar("Lỗi", result['message'] ?? "Không thể cập nhật thông tin");
+                    }
                   }
                 } catch (e) {
                   Get.snackbar("Lỗi", "Không thể cập nhật thông tin");
