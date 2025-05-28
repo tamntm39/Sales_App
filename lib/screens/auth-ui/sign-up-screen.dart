@@ -1,7 +1,6 @@
-import 'package:chichanka_perfume/controllers/sign-up-controller.dart';
 import 'package:chichanka_perfume/screens/auth-ui/sign-in-screen.dart';
+import 'package:chichanka_perfume/services/auth_register_service.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
@@ -14,41 +13,40 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final SignUpController signUpController = Get.put(SignUpController());
+  final AuthRegisterService _registerService = AuthRegisterService();
   TextEditingController username = TextEditingController();
   TextEditingController userEmail = TextEditingController();
   TextEditingController userPhone = TextEditingController();
   TextEditingController userCity = TextEditingController();
   TextEditingController userPassword = TextEditingController();
+  RxBool isPasswordVisible = true.obs;
 
   @override
   Widget build(BuildContext context) {
-    return KeyboardVisibilityBuilder(builder: (context, isKeyboardVisible) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: AppConstant.navy,
-          elevation: 0, // Loại bỏ bóng đổ để giao diện phẳng hơn
-          centerTitle: true,
-          title: Text(
-            "Đăng Ký",
-            style: TextStyle(
-              color: AppConstant.appTextColor,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+    return KeyboardVisibilityBuilder(
+      builder: (context, isKeyboardVisible) {
+        return Scaffold(
+          appBar: AppBar(
+            backgroundColor: AppConstant.navy,
+            elevation: 0,
+            centerTitle: true,
+            title: Text(
+              "Đăng Ký",
+              style: TextStyle(
+                color: AppConstant.appTextColor,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        ),
-        body: SingleChildScrollView(
-          physics: BouncingScrollPhysics(),
-          child: Container(
-            padding:
-                EdgeInsets.symmetric(horizontal: 20.0), // Thêm padding cho đẹp
-            child: Column(
-              children: [
-                SizedBox(height: Get.height / 20),
-                Container(
-                  alignment: Alignment.center,
-                  child: Text(
+          body: SingleChildScrollView(
+            physics: BouncingScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                children: [
+                  SizedBox(height: Get.height / 20),
+                  Text(
                     "Chào mừng đến với Chichanka",
                     style: TextStyle(
                       color: AppConstant.navy,
@@ -56,46 +54,45 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       fontSize: 18.0,
                     ),
                   ),
-                ),
-                SizedBox(height: Get.height / 20),
-                _buildTextField(
-                  controller: userEmail,
-                  hintText: "Email",
-                  icon: Icons.email,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                _buildTextField(
-                  controller: username,
-                  hintText: "Tên người dùng",
-                  icon: Icons.person,
-                  keyboardType: TextInputType.name,
-                ),
-                _buildTextField(
-                  controller: userPhone,
-                  hintText: "Số điện thoại",
-                  icon: Icons.phone,
-                  keyboardType: TextInputType.number,
-                ),
-                _buildTextField(
-                  controller: userCity,
-                  hintText: "Thành phố",
-                  icon: Icons.location_pin,
-                  keyboardType: TextInputType.streetAddress,
-                ),
-                _buildPasswordField(),
-                SizedBox(height: Get.height / 20),
-                _buildSignUpButton(),
-                SizedBox(height: Get.height / 20),
-                _buildSignInRow(),
-              ],
+                  SizedBox(height: Get.height / 20),
+                  _buildTextField(
+                    controller: userEmail,
+                    hintText: "Email",
+                    icon: Icons.email,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  _buildTextField(
+                    controller: username,
+                    hintText: "Tên người dùng",
+                    icon: Icons.person,
+                    keyboardType: TextInputType.name,
+                  ),
+                  _buildTextField(
+                    controller: userPhone,
+                    hintText: "Số điện thoại",
+                    icon: Icons.phone,
+                    keyboardType: TextInputType.number,
+                  ),
+                  _buildTextField(
+                    controller: userCity,
+                    hintText: "Thành phố",
+                    icon: Icons.location_pin,
+                    keyboardType: TextInputType.streetAddress,
+                  ),
+                  _buildPasswordField(),
+                  SizedBox(height: Get.height / 20),
+                  _buildSignUpButton(),
+                  SizedBox(height: Get.height / 20),
+                  _buildSignInRow(),
+                ],
+              ),
             ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 
-  // Hàm tạo TextField tùy chỉnh
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
@@ -112,12 +109,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
           hintText: hintText,
           prefixIcon: Icon(icon, color: AppConstant.navy),
           filled: true,
-          fillColor: Colors.grey[100], // Màu nền nhẹ
+          fillColor: Colors.grey[100],
           contentPadding:
               EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide.none, // Loại bỏ viền mặc định
+            borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12.0),
@@ -132,23 +129,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  // Hàm tạo trường mật khẩu
   Widget _buildPasswordField() {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 10.0),
       child: Obx(
         () => TextFormField(
           controller: userPassword,
-          obscureText: signUpController.isPasswordVisible.value,
+          obscureText: isPasswordVisible.value,
           cursorColor: AppConstant.navy,
           keyboardType: TextInputType.visiblePassword,
           decoration: InputDecoration(
             hintText: "Mật khẩu",
             prefixIcon: Icon(Icons.password, color: AppConstant.navy),
             suffixIcon: GestureDetector(
-              onTap: () => signUpController.isPasswordVisible.toggle(),
+              onTap: () => isPasswordVisible.toggle(),
               child: Icon(
-                signUpController.isPasswordVisible.value
+                isPasswordVisible.value
                     ? Icons.visibility_off
                     : Icons.visibility,
                 color: AppConstant.navy,
@@ -176,10 +172,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  // Hàm tạo nút Đăng Ký
   Widget _buildSignUpButton() {
     return Material(
-      elevation: 5, // Thêm bóng đổ cho nút
+      elevation: 5,
       borderRadius: BorderRadius.circular(25.0),
       child: Container(
         width: Get.width / 2,
@@ -187,11 +182,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         decoration: BoxDecoration(
           color: AppConstant.navy,
           borderRadius: BorderRadius.circular(25.0),
-          gradient: LinearGradient(
-            colors: [AppConstant.navy, AppConstant.navy.withValues(alpha: 0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
         ),
         child: TextButton(
           onPressed: () async {
@@ -200,7 +190,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
             String phone = userPhone.text.trim();
             String city = userCity.text.trim();
             String password = userPassword.text.trim();
-            String? userDeviceToken = '';
 
             if (name.isEmpty ||
                 email.isEmpty ||
@@ -215,26 +204,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 colorText: AppConstant.appTextColor,
               );
             } else {
-              UserCredential? userCredential =
-                  await signUpController.signUpMethod(
-                name,
-                email,
-                phone,
-                city,
-                password,
-                userDeviceToken,
+              final result = await _registerService.registerCustomer(
+                fullName: name,
+                phone: phone,
+                address: city,
+                email: email,
+                username: name, // hoặc sử dụng tên đăng nhập khác nếu có
+                password: password,
               );
-
-              if (userCredential != null) {
+              print(result);
+              if (result['success'] == true) {
                 Get.snackbar(
-                  "Email xác nhận đã được gửi",
-                  "Vui lòng kiểm tra email của bạn",
+                  "Đăng ký thành công",
+                  "Vui lòng kiểm tra email để xác nhận tài khoản",
                   snackPosition: SnackPosition.BOTTOM,
                   backgroundColor: AppConstant.navy,
                   colorText: AppConstant.appTextColor,
                 );
-                FirebaseAuth.instance.signOut();
                 Get.offAll(() => SignInScreen());
+              } else {
+                Get.snackbar(
+                  "Lỗi",
+                  result['message'] ?? "Đăng ký thất bại",
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: AppConstant.navy,
+                  colorText: AppConstant.appTextColor,
+                );
               }
             }
           },
@@ -251,7 +246,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  // Hàm tạo dòng "Đã có tài khoản? Đăng nhập"
   Widget _buildSignInRow() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

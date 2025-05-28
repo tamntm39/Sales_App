@@ -231,8 +231,9 @@ class _SigninScreenState extends State<SignInScreen> {
               );
             } else {
               // Gọi API đăng nhập
-              final result = await _authService.login(email, password);
-
+              final result = await _authService.login(
+                  userEmail.text.trim(), userPassword.text.trim());
+              print(result); // In log để kiểm tra response
               if (result['success'] == true) {
                 final userData = result['data'];
                 final prefs = await SharedPreferences.getInstance();
