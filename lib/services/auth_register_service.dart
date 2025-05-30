@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 // ...existing code...
 class AuthRegisterService {
   final Dio _dio = Dio();
-  final String baseUrl = 'http://10.0.2.2:5168';
+  final String baseUrl = 'http://10.0.2.2:7072';
   Future<Map<String, dynamic>> registerCustomer({
     required String fullName,
     required String phone,

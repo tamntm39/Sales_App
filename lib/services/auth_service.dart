@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 
 class AuthService {
   final Dio _dio = Dio();
-  final String baseUrl = 'http://10.0.2.2:5168/api/Customer';
+  final String baseUrl = 'http://10.0.2.2:7072/api/Customer';
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await _dio.post(
