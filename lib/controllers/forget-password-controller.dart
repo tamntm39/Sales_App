@@ -1,40 +1,51 @@
-import 'package:chichanka_perfume/screens/auth-ui/sign-in-screen.dart';
-import 'package:chichanka_perfume/utils/app-constant.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../services/customer/forget_password_service.dart';
+import '../screens/auth-ui/otp-reset-password-screen.dart'; // import màn hình OTP
 
-class ForgerPasswordController extends GetxController {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+class ForgetPasswordController extends GetxController {
+  var isLoading = false.obs;
 
-  Future<void> ForgetPasswordMethod(
-    String userEmail,
-  ) async {
+  Future<void> ForgetPasswordMethod(String email) async {
+    if (email.isEmpty || !email.contains('@')) {
+      Get.snackbar('Lỗi', 'Vui lòng nhập email hợp lệ',
+          snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
     try {
-      EasyLoading.show(status: "Vui lòng chờ");
+      isLoading.value = true;
 
-      await _auth.sendPasswordResetEmail(email: userEmail);
+      final response = await ApiService.forgotPassword(email);
+
+      isLoading.value = false;
+
+      if (response['success'] == true) {
+        Get.snackbar(
+          'Thành công',
+          'Mã OTP đã được gửi. Vui lòng kiểm tra email.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+
+        // ✅ Điều hướng sang màn hình nhập OTP
+        Get.to(() => OtpResetPasswordScreen(email: email));
+      } else {
+        Get.snackbar(
+          'Thất bại',
+          response['message'] ?? 'Lỗi không xác định',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      isLoading.value = false;
       Get.snackbar(
-        "Yêu cầu thành công",
-        "Khôi phục mật khẩu được gửi qua $userEmail",
+        'Lỗi',
+        'Có lỗi xảy ra: $e',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppConstant.appScendoryColor,
-        colorText: AppConstant.appTextColor,
-      );
-
-      Get.offAll(() => SignInScreen());
-
-      EasyLoading.dismiss();
-    } on FirebaseAuthException catch (e) {
-      EasyLoading.dismiss();
-      Get.snackbar(
-        "Error",
-        "$e",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppConstant.appScendoryColor,
-        colorText: AppConstant.appTextColor,
       );
     }
   }
