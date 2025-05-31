@@ -10,6 +10,8 @@ import 'package:intl/intl.dart';
 import 'package:chichanka_perfume/models/product_api_model.dart';
 import 'package:chichanka_perfume/services/product_service.dart';
 import '../../config.dart';
+import 'package:chichanka_perfume/models/product-model.dart';
+import 'package:chichanka_perfume/models/product_api_model.dart';
 
 class AllProductsScreen extends StatefulWidget {
   const AllProductsScreen({super.key});
@@ -71,7 +73,10 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
 
   int get totalPages {
     final filtered = filterAndSortProducts(products);
-    return (filtered.length / _itemsPerPage).ceil().clamp(1, double.infinity).toInt();
+    return (filtered.length / _itemsPerPage)
+        .ceil()
+        .clamp(1, double.infinity)
+        .toInt();
   }
 
   @override
@@ -147,13 +152,17 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                                 isExpanded: true,
                                 items: [
                                   DropdownMenuItem(
-                                      value: 'name_asc', child: Text('Tên: A-Z')),
+                                      value: 'name_asc',
+                                      child: Text('Tên: A-Z')),
                                   DropdownMenuItem(
-                                      value: 'name_desc', child: Text('Tên: Z-A')),
+                                      value: 'name_desc',
+                                      child: Text('Tên: Z-A')),
                                   DropdownMenuItem(
-                                      value: 'price_asc', child: Text('Giá: Thấp đến Cao')),
+                                      value: 'price_asc',
+                                      child: Text('Giá: Thấp đến Cao')),
                                   DropdownMenuItem(
-                                      value: 'price_desc', child: Text('Giá: Cao đến Thấp')),
+                                      value: 'price_desc',
+                                      child: Text('Giá: Cao đến Thấp')),
                                 ],
                                 onChanged: (value) {
                                   setState(() {
@@ -183,11 +192,16 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: InkWell(
+                                  // ...existing code...
                                   onTap: () {
-                                    // TODO: Navigate to product details if needed
+                                    final productModel =
+                                        convertApiToProductModel(product);
+                                    Get.to(() => ProductDetailsScreen(
+                                        productModel: productModel));
                                   },
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
                                     children: [
                                       ClipRRect(
                                         borderRadius: const BorderRadius.only(
@@ -197,19 +211,24 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                                         child: AspectRatio(
                                           aspectRatio: 1,
                                           child: CachedNetworkImage(
-                                            imageUrl: '$BASE_URL/${product.img}',
+                                            imageUrl:
+                                                '$BASE_URL/${product.img}',
                                             fit: BoxFit.cover,
                                             placeholder: (context, url) =>
-                                                const Center(child: CircularProgressIndicator()),
-                                            errorWidget: (context, url, error) =>
-                                                const Icon(Icons.error),
+                                                const Center(
+                                                    child:
+                                                        CircularProgressIndicator()),
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    const Icon(Icons.error),
                                           ),
                                         ),
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.all(8.0),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               product.productName,
@@ -420,4 +439,21 @@ class BottomNavPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+ProductModel convertApiToProductModel(ProductApiModel apiModel) {
+  return ProductModel(
+    productId: apiModel.productId.toString(), // ép kiểu về String
+    productName: apiModel.productName,
+    productImages: [apiModel.img ?? ''],
+    fullPrice: apiModel.priceOutput.toString(),
+    salePrice: apiModel.priceOutput.toString(),
+    isSale: false,
+    categoryId: apiModel.categoryId?.toString() ?? '',
+    categoryName: apiModel.categoryName?.toString() ?? '',
+    productDescription: apiModel.description ?? '', // dùng đúng tên trường
+    deliveryTime: '',
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+  );
 }
