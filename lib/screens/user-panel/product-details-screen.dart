@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:chichanka_perfume/controllers/cart-controller.dart';
@@ -5,12 +6,10 @@ import 'package:chichanka_perfume/models/cart-model.dart';
 import 'package:chichanka_perfume/models/product-model.dart';
 import 'package:chichanka_perfume/screens/user-panel/cart-screen.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../config.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
@@ -22,64 +21,8 @@ class ProductDetailsScreen extends StatefulWidget {
 }
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
-  User? user = FirebaseAuth.instance.currentUser;
   bool isFavorite = false;
   final CartController cartController = Get.put(CartController());
-
-  @override
-  void initState() {
-    super.initState();
-    checkFavoriteStatus();
-  }
-
-  Future<void> checkFavoriteStatus() async {
-    if (user != null) {
-      DocumentSnapshot doc = await FirebaseFirestore.instance
-          .collection('favorites')
-          .doc(user!.uid)
-          .collection('items')
-          .doc(widget.productModel.productId)
-          .get();
-      setState(() {
-        isFavorite = doc.exists;
-      });
-    }
-  }
-
-  Future<void> toggleFavorite() async {
-    if (user == null) {
-      Get.snackbar("Lỗi", "Vui lòng đăng nhập để sử dụng tính năng này");
-      return;
-    }
-
-    final favoriteRef = FirebaseFirestore.instance
-        .collection('favorites')
-        .doc(user!.uid)
-        .collection('items')
-        .doc(widget.productModel.productId);
-
-    if (isFavorite) {
-      await favoriteRef.delete();
-      setState(() {
-        isFavorite = false;
-      });
-      Get.snackbar("Đã xóa", "Đã xóa khỏi danh sách yêu thích");
-    } else {
-      await favoriteRef.set({
-        'productId': widget.productModel.productId,
-        'productName': widget.productModel.productName,
-        'productImages': widget.productModel.productImages,
-        'fullPrice': widget.productModel.fullPrice,
-        'salePrice': widget.productModel.salePrice,
-        'isSale': widget.productModel.isSale,
-        'createdAt': Timestamp.now(),
-      });
-      setState(() {
-        isFavorite = true;
-      });
-      Get.snackbar("Thành công", "Đã thêm vào danh sách yêu thích");
-    }
-  }
 
   String formatPrice(String price) {
     final formatter = NumberFormat('#,###', 'vi_VN');
@@ -257,25 +200,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 ),
                               ),
                             ),
-                            GestureDetector(
-                              onTap: toggleFavorite,
-                              child: Container(
-                                padding: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: isFavorite
-                                      ? Colors.red.shade50
-                                      : Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  isFavorite
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: isFavorite ? Colors.red : Colors.grey,
-                                  size: 24,
-                                ),
-                              ),
-                            ),
+                            // Nếu muốn giữ nút yêu thích local thì code thêm ở đây
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -385,13 +310,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 icon: Icons.add_shopping_cart,
                                 color: Colors.green.shade600,
                                 onPressed: () async {
-                                  if (user != null) {
-                                    await checkProductExistence(uId: user!.uid);
-                                    cartController.triggerAddToCartAnimation();
-                                  } else {
-                                    Get.snackbar("Lỗi",
-                                        "Vui lòng đăng nhập để thêm vào giỏ hàng");
-                                  }
+                                  await addToCartLocal();
+                                  cartController.triggerAddToCartAnimation();
                                 },
                               ),
                             ),
@@ -509,6 +429,49 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
+  Future<void> addToCartLocal() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> cartList = prefs.getStringList('cart') ?? [];
+
+    int index = cartList.indexWhere((item) {
+      final map = jsonDecode(item);
+      return map['productId'] == widget.productModel.productId;
+    });
+
+    if (index != -1) {
+      final map = jsonDecode(cartList[index]);
+      map['productQuantity'] += 1;
+      map['productTotalPrice'] =
+          double.parse(map['fullPrice']) * map['productQuantity'];
+      cartList[index] = jsonEncode(map);
+      Get.snackbar("Thành công", "Đã cập nhật số lượng cây trong giỏ hàng");
+    } else {
+      CartModel cartModel = CartModel(
+        productId: widget.productModel.productId,
+        categoryId: widget.productModel.categoryId,
+        productName: widget.productModel.productName,
+        categoryName: widget.productModel.categoryName,
+        salePrice: widget.productModel.salePrice,
+        fullPrice: widget.productModel.fullPrice,
+        productImages: widget.productModel.productImages,
+        deliveryTime: widget.productModel.deliveryTime,
+        isSale: widget.productModel.isSale,
+        productDescription: widget.productModel.productDescription,
+        createdAt: DateTime.now().toIso8601String(),
+        updatedAt: DateTime.now().toIso8601String(),
+        productQuantity: 1,
+        productTotalPrice: double.parse(widget.productModel.isSale
+            ? widget.productModel.salePrice
+            : widget.productModel.fullPrice),
+      );
+      cartList.add(jsonEncode(cartModel.toMap()));
+      Get.snackbar("Thành công", "Đã thêm cây vào giỏ hàng");
+    }
+
+    await prefs.setStringList('cart', cartList);
+    cartController.fetchCartItemCount();
+  }
+
   Widget _buildButton({
     required String text,
     required IconData icon,
@@ -605,64 +568,5 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> checkProductExistence({
-    required String uId,
-    int quantityIncrement = 1,
-  }) async {
-    final DocumentReference documentReference = FirebaseFirestore.instance
-        .collection('cart')
-        .doc(uId)
-        .collection('cartOrders')
-        .doc(widget.productModel.productId);
-
-    DocumentSnapshot snapshot = await documentReference.get();
-
-    if (snapshot.exists) {
-      int currentQuantity = snapshot['productQuantity'];
-      int updatedQuantity = currentQuantity + quantityIncrement;
-      double totalPrice = double.parse(widget.productModel.isSale
-              ? widget.productModel.salePrice
-              : widget.productModel.fullPrice) *
-          updatedQuantity;
-
-      await documentReference.update({
-        'productQuantity': updatedQuantity,
-        'productTotalPrice': totalPrice,
-      });
-
-      Get.snackbar("Thành công", "Đã cập nhật số lượng cây trong giỏ hàng");
-    } else {
-      await FirebaseFirestore.instance.collection('cart').doc(uId).set(
-        {
-          'uId': uId,
-          'createdAt': DateTime.now(),
-        },
-      );
-
-      CartModel cartModel = CartModel(
-        productId: widget.productModel.productId,
-        categoryId: widget.productModel.categoryId,
-        productName: widget.productModel.productName,
-        categoryName: widget.productModel.categoryName,
-        salePrice: widget.productModel.salePrice,
-        fullPrice: widget.productModel.fullPrice,
-        productImages: widget.productModel.productImages,
-        deliveryTime: widget.productModel.deliveryTime,
-        isSale: widget.productModel.isSale,
-        productDescription: widget.productModel.productDescription,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        productQuantity: 1,
-        productTotalPrice: double.parse(widget.productModel.isSale
-            ? widget.productModel.salePrice
-            : widget.productModel.fullPrice),
-      );
-
-      await documentReference.set(cartModel.toMap());
-      Get.snackbar("Thành công", "Đã thêm cây vào giỏ hàng");
-    }
-    cartController.fetchCartItemCount();
   }
 }
