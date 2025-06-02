@@ -13,10 +13,10 @@ class PersonalizedSuggestionsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Gợi ý nước hoa',
+          'Gợi ý cây cảnh',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: AppConstant.navy,
+        backgroundColor: const Color.fromARGB(255, 88, 209, 54),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -27,16 +27,13 @@ class PersonalizedSuggestionsScreen extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
               title: Text(
-                'Nước hoa mùi ${suggestions[index]}',
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                'Chủ đề: ${suggestions[index]}',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
               subtitle: const Text('Phù hợp với sở thích của bạn'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () {
-                // Chuyển hướng sang SuggestionsScreen với mùi hương được chọn
-                Get.to(
-                    () => SuggestionsScreen(selectedScent: suggestions[index]));
+                Get.to(() => SuggestionsScreen(selectedCategory: suggestions[index]));
               },
             ),
           );
