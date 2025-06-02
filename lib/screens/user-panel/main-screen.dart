@@ -605,9 +605,8 @@ class AllProductsWidget extends StatelessWidget {
           final product = displayProducts[index];
           return GestureDetector(
             onTap: () {
-              addToRecentlyViewed(product);
-              // Nếu ProductDetailsScreen cần ProductModel cũ, cần sửa lại để nhận ProductApiModel hoặc chuyển đổi phù hợp
-              // Get.to(() => ProductDetailsScreen(productModel: product));
+              final productModel = convertApiToProductModel(product);
+              Get.to(() => ProductDetailsScreen(productModel: productModel));
             },
             child: Container(
               width: 150,

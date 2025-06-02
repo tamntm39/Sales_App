@@ -29,4 +29,20 @@ subprojects {
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
+<<<<<<< HEAD
+=======
+}
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // Thêm plugin google-services (phiên bản mới nhất tính đến 2025)
+        classpath 'com.google.gms:google-services:4.4.2'
+        // Đảm bảo Gradle plugin tương thích với Flutter
+        classpath 'com.android.tools.build:gradle:8.3.0'
+    }
+>>>>>>> 7b15da18d5f29c0ffe9ad662989c28a0eb67974b
 }
