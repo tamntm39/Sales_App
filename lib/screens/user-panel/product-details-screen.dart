@@ -30,61 +30,98 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    checkFavoriteStatus();
+    loadCustomerIdAndCheckFavorite();
   }
 
-  Future<void> checkFavoriteStatus() async {
-    if (user != null) {
-      DocumentSnapshot doc = await FirebaseFirestore.instance
-          .collection('favorites')
-          .doc(user!.uid)
-          .collection('items')
-          .doc(widget.productModel.productId)
-          .get();
-      setState(() {
-        isFavorite = doc.exists;
-      });
+  Future<void> loadCustomerIdAndCheckFavorite() async {
+    final prefs = await SharedPreferences.getInstance();
+    customerId = prefs.getInt('customerId');
+    if (customerId != null) {
+      isFavorite = await FavoriteService()
+          .isFavorite(customerId!, int.parse(widget.productModel.productId));
+      setState(() {});
     }
   }
 
   Future<void> toggleFavorite() async {
-    if (user == null) {
+    if (customerId == null) {
       Get.snackbar("Lỗi", "Vui lòng đăng nhập để sử dụng tính năng này");
       return;
     }
-
-    final favoriteRef = FirebaseFirestore.instance
-        .collection('favorites')
-        .doc(user!.uid)
-        .collection('items')
-        .doc(widget.productModel.productId);
-
+    setState(() {
+      isAnimatingFavorite = true;
+    });
+    bool result;
     if (isFavorite) {
-      await favoriteRef.delete();
-      setState(() {
-        isFavorite = false;
-      });
-      Get.snackbar("Đã xóa", "Đã xóa khỏi danh sách yêu thích");
+      result = await FavoriteService().removeFavorite(
+          customerId!, int.parse(widget.productModel.productId));
+      if (result) {
+        setState(() {
+          isFavorite = false;
+        });
+        Get.snackbar("Đã xóa", "Đã xóa khỏi danh sách yêu thích");
+      }
     } else {
-      await favoriteRef.set({
-        'productId': widget.productModel.productId,
-        'productName': widget.productModel.productName,
-        'productImages': widget.productModel.productImages,
-        'fullPrice': widget.productModel.fullPrice,
-        'salePrice': widget.productModel.salePrice,
-        'isSale': widget.productModel.isSale,
-        'createdAt': Timestamp.now(),
-      });
-      setState(() {
-        isFavorite = true;
-      });
-      Get.snackbar("Thành công", "Đã thêm vào danh sách yêu thích");
+      result = await FavoriteService()
+          .addFavorite(customerId!, int.parse(widget.productModel.productId));
+      if (result) {
+        setState(() {
+          isFavorite = true;
+        });
+        Get.snackbar("Thành công", "Đã thêm vào danh sách yêu thích");
+      }
     }
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => isAnimatingFavorite = false);
+    });
   }
 
   String formatPrice(String price) {
     final formatter = NumberFormat('#,###', 'vi_VN');
     return formatter.format(double.parse(price));
+  }
+
+  Future<void> addToCartLocal() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> cartList = prefs.getStringList('cart') ?? [];
+
+    int index = cartList.indexWhere((item) {
+      final map = jsonDecode(item);
+      return map['productId'] == widget.productModel.productId;
+    });
+
+    if (index != -1) {
+      final map = jsonDecode(cartList[index]);
+      map['productQuantity'] += 1;
+      map['productTotalPrice'] =
+          double.parse(map['fullPrice']) * map['productQuantity'];
+      cartList[index] = jsonEncode(map);
+      Get.snackbar("Thành công", "Đã cập nhật số lượng cây trong giỏ hàng");
+    } else {
+      CartModel cartModel = CartModel(
+        productId: widget.productModel.productId,
+        categoryId: widget.productModel.categoryId,
+        productName: widget.productModel.productName,
+        categoryName: widget.productModel.categoryName,
+        salePrice: widget.productModel.salePrice,
+        fullPrice: widget.productModel.fullPrice,
+        productImages: widget.productModel.productImages,
+        deliveryTime: widget.productModel.deliveryTime,
+        isSale: widget.productModel.isSale,
+        productDescription: widget.productModel.productDescription,
+        createdAt: DateTime.now().toIso8601String(),
+        updatedAt: DateTime.now().toIso8601String(),
+        productQuantity: 1,
+        productTotalPrice: double.parse(widget.productModel.isSale
+            ? widget.productModel.salePrice
+            : widget.productModel.fullPrice),
+      );
+      cartList.add(jsonEncode(cartModel.toMap()));
+      Get.snackbar("Thành công", "Đã thêm cây vào giỏ hàng");
+    }
+
+    await prefs.setStringList('cart', cartList);
+    cartController.fetchCartItemCount();
   }
 
   @override
@@ -101,7 +138,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        // Đã xóa icon tim ở actions, chỉ giữ lại icon giỏ hàng nếu cần
         actions: [
           Obx(() => Stack(
                 children: [
@@ -261,20 +297,26 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             ),
                             GestureDetector(
                               onTap: toggleFavorite,
-                              child: Container(
-                                padding: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: isFavorite
-                                      ? Colors.red.shade50
-                                      : Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  isFavorite
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: isFavorite ? Colors.red : Colors.grey,
-                                  size: 24,
+                              child: AnimatedScale(
+                                scale: isAnimatingFavorite ? 1.3 : 1.0,
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeInOut,
+                                child: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: isFavorite
+                                        ? Colors.red.shade50
+                                        : Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    isFavorite
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color:
+                                        isFavorite ? Colors.red : Colors.grey,
+                                    size: 28,
+                                  ),
                                 ),
                               ),
                             ),
@@ -387,13 +429,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 icon: Icons.add_shopping_cart,
                                 color: Colors.green.shade600,
                                 onPressed: () async {
-                                  if (user != null) {
-                                    await checkProductExistence(uId: user!.uid);
-                                    cartController.triggerAddToCartAnimation();
-                                  } else {
-                                    Get.snackbar("Lỗi",
-                                        "Vui lòng đăng nhập để thêm vào giỏ hàng");
-                                  }
+                                  await addToCartLocal();
+                                  cartController.triggerAddToCartAnimation();
                                 },
                               ),
                             ),
@@ -511,49 +548,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Future<void> addToCartLocal() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> cartList = prefs.getStringList('cart') ?? [];
-
-    int index = cartList.indexWhere((item) {
-      final map = jsonDecode(item);
-      return map['productId'] == widget.productModel.productId;
-    });
-
-    if (index != -1) {
-      final map = jsonDecode(cartList[index]);
-      map['productQuantity'] += 1;
-      map['productTotalPrice'] =
-          double.parse(map['fullPrice']) * map['productQuantity'];
-      cartList[index] = jsonEncode(map);
-      Get.snackbar("Thành công", "Đã cập nhật số lượng cây trong giỏ hàng");
-    } else {
-      CartModel cartModel = CartModel(
-        productId: widget.productModel.productId,
-        categoryId: widget.productModel.categoryId,
-        productName: widget.productModel.productName,
-        categoryName: widget.productModel.categoryName,
-        salePrice: widget.productModel.salePrice,
-        fullPrice: widget.productModel.fullPrice,
-        productImages: widget.productModel.productImages,
-        deliveryTime: widget.productModel.deliveryTime,
-        isSale: widget.productModel.isSale,
-        productDescription: widget.productModel.productDescription,
-        createdAt: DateTime.now().toIso8601String(),
-        updatedAt: DateTime.now().toIso8601String(),
-        productQuantity: 1,
-        productTotalPrice: double.parse(widget.productModel.isSale
-            ? widget.productModel.salePrice
-            : widget.productModel.fullPrice),
-      );
-      cartList.add(jsonEncode(cartModel.toMap()));
-      Get.snackbar("Thành công", "Đã thêm cây vào giỏ hàng");
-    }
-
-    await prefs.setStringList('cart', cartList);
-    cartController.fetchCartItemCount();
-  }
-
   Widget _buildButton({
     required String text,
     required IconData icon,
@@ -650,64 +644,5 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> checkProductExistence({
-    required String uId,
-    int quantityIncrement = 1,
-  }) async {
-    final DocumentReference documentReference = FirebaseFirestore.instance
-        .collection('cart')
-        .doc(uId)
-        .collection('cartOrders')
-        .doc(widget.productModel.productId);
-
-    DocumentSnapshot snapshot = await documentReference.get();
-
-    if (snapshot.exists) {
-      int currentQuantity = snapshot['productQuantity'];
-      int updatedQuantity = currentQuantity + quantityIncrement;
-      double totalPrice = double.parse(widget.productModel.isSale
-              ? widget.productModel.salePrice
-              : widget.productModel.fullPrice) *
-          updatedQuantity;
-
-      await documentReference.update({
-        'productQuantity': updatedQuantity,
-        'productTotalPrice': totalPrice,
-      });
-
-      Get.snackbar("Thành công", "Đã cập nhật số lượng cây trong giỏ hàng");
-    } else {
-      await FirebaseFirestore.instance.collection('cart').doc(uId).set(
-        {
-          'uId': uId,
-          'createdAt': DateTime.now(),
-        },
-      );
-
-      CartModel cartModel = CartModel(
-        productId: widget.productModel.productId,
-        categoryId: widget.productModel.categoryId,
-        productName: widget.productModel.productName,
-        categoryName: widget.productModel.categoryName,
-        salePrice: widget.productModel.salePrice,
-        fullPrice: widget.productModel.fullPrice,
-        productImages: widget.productModel.productImages,
-        deliveryTime: widget.productModel.deliveryTime,
-        isSale: widget.productModel.isSale,
-        productDescription: widget.productModel.productDescription,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        productQuantity: 1,
-        productTotalPrice: double.parse(widget.productModel.isSale
-            ? widget.productModel.salePrice
-            : widget.productModel.fullPrice),
-      );
-
-      await documentReference.set(cartModel.toMap());
-      Get.snackbar("Thành công", "Đã thêm cây vào giỏ hàng");
-    }
-    cartController.fetchCartItemCount();
   }
 }
