@@ -1,68 +1,62 @@
-// ignore_for_file: file_names, unused_local_variable, unused_field, avoid_print
+// ignore_for_file: file_names, unused_local_variable, avoid_print
 
-import 'package:chichanka_perfume/controllers/get-device-token-controller.dart';
-import 'package:chichanka_perfume/models/user-model.dart';
+import 'dart:convert';
 import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
 
 class GoogleSignInController extends GetxController {
-  final GoogleSignIn googleSignIn = GoogleSignIn();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  // Thay YOUR_WEB_CLIENT_ID bằng client id web OAuth 2.0 trong Google Cloud Console
+  final GoogleSignIn googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    serverClientId: '122754317810-s8g8tikvthd720j11eefl500s3j5lllo.apps.googleusercontent.com',
+  );
 
   Future<void> signInWithGoogle() async {
-    final GetDeviceTokenController getDeviceTokenController =
-        Get.put(GetDeviceTokenController());
     try {
-      final GoogleSignInAccount? googleSignInAccount =
-          await googleSignIn.signIn();
+      // Người dùng đăng nhập với Google
+      final GoogleSignInAccount? googleSignInAccount = await googleSignIn.signIn();
 
-      if (googleSignInAccount != null) {
-        EasyLoading.show(status: "Please wait..");
-        final GoogleSignInAuthentication googleSignInAuthentication =
-            await googleSignInAccount.authentication;
+      if (googleSignInAccount == null) {
+        print("Người dùng đã hủy đăng nhập.");
+        return;
+      }
 
-        final AuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: googleSignInAuthentication.accessToken,
-          idToken: googleSignInAuthentication.idToken,
-        );
+      EasyLoading.show(status: "Please wait...");
 
-        final UserCredential userCredential =
-            await _auth.signInWithCredential(credential);
+      final GoogleSignInAuthentication googleSignInAuthentication =
+      await googleSignInAccount.authentication;
 
-        final User? user = userCredential.user;
+      final idToken = googleSignInAuthentication.idToken;
+      print('idToken lấy được: $idToken');
 
-        if (user != null) {
-          UserModel userModel = UserModel(
-            uId: user.uid,
-            username: user.displayName.toString(),
-            email: user.email.toString(),
-            phone: user.phoneNumber.toString(),
-            userImg: user.photoURL.toString(),
-            userDeviceToken: getDeviceTokenController.deviceToken.toString(),
-            country: '',
-            userAddress: '',
-            street: '',
-            isAdmin: false,
-            isActive: true,
-            createdOn: DateTime.now(),
-            city: '',
-          );
+      if (idToken == null) {
+        EasyLoading.dismiss();
+        print("Không có idToken, có thể do chưa cấu hình đúng OAuth client.");
+        return;
+      }
 
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .set(userModel.toMap());
-          EasyLoading.dismiss();
-          Get.offAll(() => const MainScreen());
-        }
+      // Gửi idToken đến backend để xác thực
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:7072/api/auth/google'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'idToken': idToken}),
+      );
+
+      EasyLoading.dismiss();
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print("Backend xác thực thành công: $data");
+        Get.offAll(() => const MainScreen());
+      } else {
+        print("Backend xác thực thất bại: ${response.body}");
       }
     } catch (e) {
       EasyLoading.dismiss();
-      print("error $e");
+      print("Lỗi khi đăng nhập Google: $e");
     }
   }
 }
