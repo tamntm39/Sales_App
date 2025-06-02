@@ -1,18 +1,17 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chichanka_perfume/models/product_api_model.dart';
+import 'package:chichanka_perfume/models/product-model.dart';
 import 'package:chichanka_perfume/screens/user-panel/product-details-screen.dart';
 import 'package:chichanka_perfume/services/product_service.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../config.dart';
-import '../../models/product-model.dart';
 
 class SuggestionsScreen extends StatefulWidget {
-  final String? selectedCategory;
+  final String selectedCategory;
 
-  const SuggestionsScreen({super.key, this.selectedCategory});
+  const SuggestionsScreen({super.key, required this.selectedCategory});
 
   @override
   State<SuggestionsScreen> createState() => _SuggestionsScreenState();
@@ -32,6 +31,7 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
   Future<void> fetchProducts() async {
     try {
       final fetchedProducts = await ProductService.fetchProducts();
+      fetchedProducts.shuffle(); // Ngẫu nhiên hoá sản phẩm
       setState(() {
         products = fetchedProducts;
         isLoading = false;
@@ -44,27 +44,40 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
     }
   }
 
+  ProductModel convertApiToProductModel(ProductApiModel apiModel) {
+    return ProductModel(
+      productId: apiModel.productId.toString(),
+      productName: apiModel.productName,
+      productImages: [apiModel.img ?? ''],
+      fullPrice: apiModel.priceOutput.toString(),
+      salePrice: apiModel.priceOutput.toString(),
+      isSale: false,
+      categoryId: apiModel.categoryId?.toString() ?? '',
+      categoryName: apiModel.categoryName?.toString() ?? '',
+      productDescription: apiModel.description ?? '',
+      deliveryTime: '',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat('#,###', 'vi_VN');
 
-    // Nếu muốn lọc theo selectedCategory, chỉ cần bỏ comment đoạn dưới:
-    // final filteredProducts = widget.selectedCategory == null
-    //     ? products
-    //     : products.where((p) => p.categoryName == widget.selectedCategory).toList();
-
-    final filteredProducts = products; // hiện toàn bộ sản phẩm
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gợi ý sản phẩm'),
         backgroundColor: const Color.fromARGB(255, 88, 209, 54),
+        title: const Text(
+          'Gợi ý cho bạn',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : error.isNotEmpty
               ? Center(child: Text(error))
-              : filteredProducts.isEmpty
+              : products.isEmpty
                   ? const Center(child: Text('Không có sản phẩm nào.'))
                   : GridView.builder(
                       padding: const EdgeInsets.all(12),
@@ -75,18 +88,25 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
                         crossAxisSpacing: 12,
                         childAspectRatio: 0.7,
                       ),
-                      itemCount: filteredProducts.length,
+                      itemCount: products.length,
                       itemBuilder: (context, index) {
-                        final product = filteredProducts[index];
+                        final product = products[index];
+                        final productModel = convertApiToProductModel(product);
+
                         return Card(
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           child: InkWell(
                             onTap: () {
-                              final productModel =
-                                  convertApiToProductModel(product);
-                              Get.to(() => ProductDetailsScreen(
-                                  productModel: productModel));
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ProductDetailsScreen(
+                                    productModel: productModel,
+                                  ),
+                                ),
+                              );
                             },
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -121,8 +141,9 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
@@ -142,23 +163,6 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
                         );
                       },
                     ),
-    );
-  }
-
-  ProductModel convertApiToProductModel(ProductApiModel apiModel) {
-    return ProductModel(
-      productId: apiModel.productId.toString(),
-      productName: apiModel.productName,
-      productImages: [apiModel.img ?? ''],
-      fullPrice: apiModel.priceOutput.toString(),
-      salePrice: apiModel.priceOutput.toString(),
-      isSale: false,
-      categoryId: apiModel.categoryId?.toString() ?? '',
-      categoryName: apiModel.categoryName?.toString() ?? '',
-      productDescription: apiModel.description ?? '',
-      deliveryTime: '',
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
     );
   }
 }
