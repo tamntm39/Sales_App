@@ -57,12 +57,12 @@ class DrawerWidget extends StatelessWidget {
         // Loại bỏ trùng lặp và trả về danh sách
         return scentPreferences.isNotEmpty
             ? scentPreferences.toSet().toList()
-            : ['Trang trí', 'Phong thủy', 'Quà tặng']; // Mặc định nếu không có dữ liệu
+            : ['Cây trong nhà', 'Cây ngoài trời', 'Cây văn phòng', 'Cây sen đá', 'Cây phong thủy']; // Mặc định nếu không có dữ liệu
       }
-      return ['Trang trí', 'Phong thủy', 'Quà tặng']; // Mặc định nếu không có người dùng
+      return ['Cây trong nhà', 'Cây ngoài trời', 'Cây văn phòng', 'Cây sen đá', 'Cây phong thủy']; // Mặc định nếu không có người dùng
     } catch (e) {
       print('Error fetching suggestions: $e');
-      return ['Trang trí', 'Phong thủy', 'Quà tặng']; // Mặc định khi có lỗi
+      return ['Cây trong nhà', 'Cây ngoài trời', 'Cây văn phòng', 'Cây sen đá', 'Cây phong thủy']; // Mặc định khi có lỗi
     }
   }
 
@@ -223,7 +223,8 @@ class DrawerWidget extends StatelessWidget {
             Get.back();
             List<String> suggestions = await _fetchPersonalizedSuggestions();
             Get.to(
-                () => PersonalizedSuggestionsScreen(suggestions: suggestions));
+                // () => PersonalizedSuggestionsScreen(suggestions: suggestions));
+                () => const PersonalizedSuggestionsScreen());
           },
         ),
         _buildMenuItem(

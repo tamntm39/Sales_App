@@ -1,15 +1,18 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chichanka_perfume/models/product_api_model.dart';
-import 'package:chichanka_perfume/models/product-model.dart';
-import 'package:chichanka_perfume/screens/user-panel/product-details-screen.dart';
-import 'package:chichanka_perfume/services/product_service.dart';
-import 'package:chichanka_perfume/utils/app-constant.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import '../../config.dart';
+import '../../models/product_api_model.dart';
+import '../../services/suggest-service.dart';
+import '../../utils/app-constant.dart';
+import 'product-details-screen.dart';
+import 'package:chichanka_perfume/models/product-model.dart';
+import 'package:chichanka_perfume/config.dart';  
+
 
 class SuggestionsScreen extends StatefulWidget {
-  final String selectedCategory;
+  final int selectedCategory;
 
   const SuggestionsScreen({super.key, required this.selectedCategory});
 
@@ -22,59 +25,39 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
   bool isLoading = true;
   String error = '';
 
+  final currencyFormat = NumberFormat('#,###', 'vi_VN');
+
   @override
   void initState() {
     super.initState();
-    fetchProducts();
+    fetchSuggestions();
   }
 
-  Future<void> fetchProducts() async {
+  Future<void> fetchSuggestions() async {
     try {
-      final fetchedProducts = await ProductService.fetchProducts();
-      fetchedProducts.shuffle(); // Ngẫu nhiên hoá sản phẩm
+      final fetchedProducts = await SuggestionProductService.fetchProductsByCategoryId(
+          widget.selectedCategory);
       setState(() {
         products = fetchedProducts;
         isLoading = false;
       });
     } catch (e) {
       setState(() {
-        error = 'Lỗi khi tải sản phẩm: $e';
         isLoading = false;
+        error = e.toString();
       });
     }
   }
 
-  ProductModel convertApiToProductModel(ProductApiModel apiModel) {
-    return ProductModel(
-      productId: apiModel.productId.toString(),
-      productName: apiModel.productName,
-      productImages: [apiModel.img ?? ''],
-      fullPrice: apiModel.priceOutput.toString(),
-      salePrice: apiModel.priceOutput.toString(),
-      isSale: false,
-      categoryId: apiModel.categoryId?.toString() ?? '',
-      categoryName: apiModel.categoryName?.toString() ?? '',
-      productDescription: apiModel.description ?? '',
-      deliveryTime: '',
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat('#,###', 'vi_VN');
-
     return Scaffold(
       appBar: AppBar(
+        title: const Text('Gợi ý sản phẩm',style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
         backgroundColor: const Color.fromARGB(255, 88, 209, 54),
-        title: const Text(
-          'Gợi ý cho bạn',
-          style: TextStyle(color: Colors.white),
-        ),
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CupertinoActivityIndicator())
           : error.isNotEmpty
               ? Center(child: Text(error))
               : products.isEmpty
@@ -91,22 +74,16 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
                       itemCount: products.length,
                       itemBuilder: (context, index) {
                         final product = products[index];
-                        final productModel = convertApiToProductModel(product);
-
                         return Card(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: InkWell(
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ProductDetailsScreen(
-                                    productModel: productModel,
-                                  ),
-                                ),
-                              );
+                              Get.to(() => ProductDetailsScreen(
+                                    productModel:
+                                        convertApiToProductModel(product),
+                                  ));
                             },
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -165,4 +142,20 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
                     ),
     );
   }
+}
+ProductModel convertApiToProductModel(ProductApiModel apiModel) {
+  return ProductModel(
+    productId: apiModel.productId.toString(), // ép kiểu về String
+    productName: apiModel.productName,
+    productImages: [apiModel.img ?? ''],
+    fullPrice: apiModel.priceOutput.toString(),
+    salePrice: apiModel.priceOutput.toString(),
+    isSale: false,
+    categoryId: apiModel.categoryId?.toString() ?? '',
+    categoryName: apiModel.categoryName?.toString() ?? '',
+    productDescription: apiModel.description ?? '', // dùng đúng tên trường
+    deliveryTime: '',
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+  );
 }
