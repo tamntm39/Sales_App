@@ -1,61 +1,58 @@
-// import 'package:chichanka_perfume/screens/user-panel/suggest-screen.dart';
-// import 'package:chichanka_perfume/utils/app-constant.dart';
-// import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
-
-// class PersonalizedSuggestionsScreen extends StatelessWidget {
-//   final List<String> suggestions;
-
-//   const PersonalizedSuggestionsScreen({super.key, required this.suggestions});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text(
-//           'Gợi ý cây cảnh',
-//           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-//         ),
-//         backgroundColor: const Color.fromARGB(255, 88, 209, 54),
-//       ),
-//       body: ListView.builder(
-//         padding: const EdgeInsets.all(16),
-//         itemCount: suggestions.length,
-//         itemBuilder: (context, index) {
-//           return Card(
-//             elevation: 22,
-//             margin: const EdgeInsets.only(bottom: 8),
-//             child: ListTile(
-//               title: Text(
-//                 'Chủ đề: ${suggestions[index]}',
-//                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-//               ),
-//               subtitle: const Text('Phù hợp với sở thích của bạn'),
-//               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-//               onTap: () {
-//                 Get.to(() => SuggestionsScreen(selectedCategory: suggestions[index]));
-//               },
-//             ),
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
-import 'package:chichanka_perfume/screens/user-panel/suggest-screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../models/category_api_model.dart';
+import '../../models/product_api_model.dart';
+import '../../services/category_service.dart';
+import '../../services/suggest-service.dart';
+import '../../utils/app-constant.dart';
+import 'suggest-screen.dart';
 
-class PersonalizedSuggestionsScreen extends StatelessWidget {
-  final List<String> suggestions;
+class PersonalizedSuggestionsScreen extends StatefulWidget {
+  const PersonalizedSuggestionsScreen({super.key});
 
-  const PersonalizedSuggestionsScreen({super.key, required this.suggestions});
+  @override
+  State<PersonalizedSuggestionsScreen> createState() =>
+      _PersonalizedSuggestionsScreenState();
+}
+
+class _PersonalizedSuggestionsScreenState
+    extends State<PersonalizedSuggestionsScreen> {
+  List<CategoryApiModel> categories = [];
+  Map<int, ProductApiModel?> productsByCategory = {};
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchSuggestions();
+  }
+
+  Future<void> fetchSuggestions() async {
+    try {
+      final fetchedCategories = await CategoryService.fetchCategories();
+      final Map<int, ProductApiModel?> productMap = {};
+
+      for (final category in fetchedCategories) {
+        final products = await SuggestionProductService.fetchProductsByCategoryId(
+            category.categoryId);
+        productMap[category.categoryId] =
+            products.isNotEmpty ? products.first : null;
+      }
+
+      setState(() {
+        categories = fetchedCategories;
+        productsByCategory = productMap;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Shuffle danh sách suggestion để chọn ngẫu nhiên
-    final randomCategory = (List<String>.from(suggestions)..shuffle()).first;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -64,23 +61,33 @@ class PersonalizedSuggestionsScreen extends StatelessWidget {
         ),
         backgroundColor: const Color.fromARGB(255, 88, 209, 54),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Card(
-          elevation: 2,
-          child: ListTile(
-            title: const Text(
-              'Gợi ý sản phẩm',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                final category = categories[index];
+                return Card(
+                  elevation: 6,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    title: Text(
+                      category.name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    subtitle: const Text('Gợi ý theo sở thích của bạn'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: () {
+                      Get.to(() => SuggestionsScreen(
+                          selectedCategory: category.categoryId));
+                    },
+                  ),
+                );
+              },
             ),
-            subtitle: const Text('Phù hợp với sở thích của bạn'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              Get.to(() => SuggestionsScreen(selectedCategory: randomCategory));
-            },
-          ),
-        ),
-      ),
     );
   }
 }
+

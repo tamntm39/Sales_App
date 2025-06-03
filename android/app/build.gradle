@@ -14,12 +14,27 @@ android {
     ndkVersion = "27.0.12077973"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11 
+        jvmTarget = '1.8'
+        freeCompilerArgs += ['-Xjvm-default=all']  // Thêm dòng này
+    }
+    signingConfigs {
+        release {
+            storeFile file("release.keystore")
+            storePassword "12345678"
+            keyAlias "treestoreKey"
+            keyPassword "12345678"
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
     }
 
     defaultConfig {
@@ -47,10 +62,9 @@ flutter {
 }
 // Thêm phần dependencies để khai báo các thư viện Firebase
 dependencies {
-    // Sử dụng Firebase BOM để quản lý phiên bản
-    implementation platform('com.google.firebase:firebase-bom:33.1.2')
-    // Khai báo các thư viện Firebase mà ứng dụng sử dụng
+    implementation platform('com.google.firebase:firebase-bom:32.7.1')
     implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-database'
     implementation 'com.google.firebase:firebase-firestore'
     implementation 'com.google.firebase:firebase-messaging' // Nếu bạn sử dụng FCM
 }

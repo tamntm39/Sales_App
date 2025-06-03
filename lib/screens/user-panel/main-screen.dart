@@ -23,9 +23,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_card/image_card.dart';
 import 'package:intl/intl.dart';
 import 'package:chichanka_perfume/models/product_api_model.dart';
-// Ensure that the file product-api_model.dart defines a class named ProductApiModel.
 import 'package:chichanka_perfume/services/product_service.dart';
-import '../../config.dart'; // import BASE_URL
+import '../../config.dart'; 
+import 'package:chichanka_perfume/screens/user-panel/ai-chat-screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -498,6 +498,18 @@ class _MainScreenState extends State<MainScreen>
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.smart_toy),
+        backgroundColor: Colors.green,
+        onPressed: () {
+          // Mở màn hình Chat AI
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AiChatScreen()),
+          );
+          // Nếu dùng GetX:
+          // Get.to(() => const AiChatScreen());
+        },
       ),
     );
   }
