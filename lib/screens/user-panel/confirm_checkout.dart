@@ -207,26 +207,38 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      if (couponController.text.trim() == 'GIAMGIA100') {
-                        discount = 100000.0;
-                        Get.snackbar(
-                          'Thành công',
-                          'Áp dụng mã giảm giá thành công! Giảm 100.000đ',
-                          backgroundColor: Colors.green,
-                          colorText: Colors.white,
-                        );
-                      } else {
+                  onPressed: () async {
+                    final code = couponController.text.trim();
+                    if (code.isEmpty) {
+                      Get.snackbar('Lỗi', 'Vui lòng nhập mã giảm giá',
+                          backgroundColor: Colors.red, colorText: Colors.white);
+                      return;
+                    }
+                    final result =
+                        await OrderService().checkPromotionCode(code, total);
+                    if (result != null && result['success'] == true) {
+                      final discountAmount =
+                          result['data']['discountAmount'] ?? 0.0;
+                      setState(() {
+                        discount = discountAmount.toDouble();
+                      });
+                      Get.snackbar(
+                        'Thành công',
+                        'Áp dụng mã giảm giá thành công! Giảm ${_currencyFormat.format(discount)}đ',
+                        backgroundColor: Colors.green,
+                        colorText: Colors.white,
+                      );
+                    } else {
+                      setState(() {
                         discount = 0.0;
-                        Get.snackbar(
-                          'Lỗi',
-                          'Mã giảm giá không hợp lệ',
-                          backgroundColor: Colors.red,
-                          colorText: Colors.white,
-                        );
-                      }
-                    });
+                      });
+                      Get.snackbar(
+                        'Lỗi',
+                        result?['message'] ?? 'Mã giảm giá không hợp lệ',
+                        backgroundColor: Colors.red,
+                        colorText: Colors.white,
+                      );
+                    }
                   },
                   child: const Text(
                     'Áp dụng mã giảm giá',

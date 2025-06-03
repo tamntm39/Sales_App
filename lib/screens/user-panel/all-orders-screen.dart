@@ -35,7 +35,7 @@ class AllOrdersScreen extends StatefulWidget {
 class _AllOrdersScreenState extends State<AllOrdersScreen> {
   final ProductPriceController productPriceController =
       Get.put(ProductPriceController());
-  String _filterStatus = 'all'; // 'all', 'pending', 'delivered'
+  dynamic _filterStatus = 'all'; // String hoặc int
   late Future<List<OrderApiModel>> _ordersFuture;
   int? customerId;
 
@@ -77,10 +77,11 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
 
   List<OrderGroup> _filterOrderGroups(List<OrderGroup> groups) {
     if (_filterStatus == 'all') return groups;
-    return groups.where((group) {
-      final delivered = group.state == 1;
-      return _filterStatus == 'delivered' ? delivered : !delivered;
-    }).toList();
+    if (_filterStatus == 4) {
+      // Hủy: state > 3
+      return groups.where((group) => group.state > 3).toList();
+    }
+    return groups.where((group) => group.state == _filterStatus).toList();
   }
 
   @override
@@ -147,41 +148,48 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
   }
 
   Widget _buildFilterBar() {
+    final filters = [
+      {'label': 'Tất cả', 'value': 'all'},
+      {'label': 'Chưa duyệt', 'value': 0},
+      {'label': 'Đã duyệt', 'value': 1},
+      {'label': 'Đang giao', 'value': 2},
+      {'label': 'Đã nhận', 'value': 3},
+      {'label': 'Hủy', 'value': 4}, // 4 đại diện cho state > 3
+    ];
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       color: Colors.grey[200],
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildFilterButton("Tất cả", 'all'),
-          _buildFilterButton("Đang chờ", 'pending'),
-          _buildFilterButton("Đã giao", 'delivered'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterButton(String label, String filterValue) {
-    final isSelected = _filterStatus == filterValue;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _filterStatus = filterValue;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppConstant.appMainColor : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppConstant.appMainColor),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppConstant.appMainColor,
-            fontWeight: FontWeight.w500,
-          ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: filters.map((filter) {
+            final isSelected = _filterStatus == filter['value'];
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _filterStatus = filter['value'];
+                });
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppConstant.appMainColor : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppConstant.appMainColor),
+                ),
+                child: Text(
+                  filter['label'] as String,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppConstant.appMainColor,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ),
     );
@@ -264,7 +272,7 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            _buildStatusChip(group.state == 1),
+            _buildStatusChip(group.state),
             if (group.state == 1)
               Align(
                 alignment: Alignment.centerRight,
@@ -291,19 +299,49 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
     );
   }
 
-  Widget _buildStatusChip(bool delivered) {
+  Widget _buildStatusChip(int state) {
+    String label;
+    Color color;
+    Color bgColor;
+
+    switch (state) {
+      case 0:
+        label = "Chưa duyệt";
+        color = Colors.orange;
+        bgColor = Colors.orange.withOpacity(0.1);
+        break;
+      case 1:
+        label = "Đã duyệt";
+        color = Colors.blue;
+        bgColor = Colors.blue.withOpacity(0.1);
+        break;
+      case 2:
+        label = "Đang giao";
+        color = Colors.purple;
+        bgColor = Colors.purple.withOpacity(0.1);
+        break;
+      case 3:
+        label = "Đã nhận";
+        color = Colors.green;
+        bgColor = Colors.green.withOpacity(0.1);
+        break;
+      default:
+        label = "Hủy";
+        color = Colors.red;
+        bgColor = Colors.red.withOpacity(0.1);
+        break;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: delivered
-            ? Colors.green.withOpacity(0.1)
-            : Colors.orange.withOpacity(0.1),
+        color: bgColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        delivered ? "Đã giao" : "Đang chờ...",
+        label,
         style: TextStyle(
-          color: delivered ? Colors.green : Colors.orange,
+          color: color,
           fontSize: 12,
           fontWeight: FontWeight.w500,
         ),
