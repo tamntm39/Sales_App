@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:chichanka_perfume/controllers/cart-controller.dart';
 import 'package:chichanka_perfume/controllers/cart-price-controller.dart';
 import 'package:chichanka_perfume/models/cart-model.dart';
 import 'package:chichanka_perfume/screens/user-panel/checkout-screen.dart';
@@ -5,13 +7,13 @@ import 'package:chichanka_perfume/screens/user-panel/all-products-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/settings-screen.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_swipe_action_cell/core/cell.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chichanka_perfume/config.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -22,13 +24,15 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen>
     with SingleTickerProviderStateMixin {
-  final User? user = FirebaseAuth.instance.currentUser;
   final ProductPriceController productPriceController =
       Get.put(ProductPriceController());
+  final CartController cartController = Get.find<CartController>();
   final NumberFormat _currencyFormat = NumberFormat('#,##0', 'vi_VN');
   int _selectedIndex = 1;
   AnimationController? _controller;
   Animation<double>? _animation;
+
+  List<CartModel> cartList = [];
 
   @override
   void initState() {
@@ -40,6 +44,59 @@ class _CartScreenState extends State<CartScreen>
     _animation = Tween<double>(begin: 1, end: 1).animate(
       CurvedAnimation(parent: _controller!, curve: Curves.easeInOut),
     );
+    _loadCart();
+  }
+
+  Future<void> _loadCart() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> cartStringList = prefs.getStringList('cart') ?? [];
+    setState(() {
+      cartList = cartStringList.map((item) {
+        final map = jsonDecode(item);
+        // Đảm bảo productImages là List<String>
+        if (map['productImages'] is List) {
+          map['productImages'] =
+              List<String>.from(map['productImages'].map((e) => e.toString()));
+        } else if (map['productImages'] is String) {
+          map['productImages'] = [map['productImages'].toString()];
+        }
+        return CartModel.fromMap(map);
+      }).toList();
+    });
+    cartController.fetchCartItemCount();
+  }
+
+  Future<void> _removeFromCart(String productId) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> cartStringList = prefs.getStringList('cart') ?? [];
+    cartStringList.removeWhere((item) {
+      final map = jsonDecode(item);
+      return map['productId'] == productId;
+    });
+    await prefs.setStringList('cart', cartStringList);
+    await _loadCart();
+    cartController.fetchCartItemCount();
+    Get.snackbar("Thành công", "Đã xóa sản phẩm khỏi giỏ hàng");
+  }
+
+  Future<void> _updateQuantity(CartModel cartModel, int change) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> cartStringList = prefs.getStringList('cart') ?? [];
+    int index = cartStringList.indexWhere((item) {
+      final map = jsonDecode(item);
+      return map['productId'] == cartModel.productId;
+    });
+    if (index != -1) {
+      final map = jsonDecode(cartStringList[index]);
+      int newQuantity = map['productQuantity'] + change;
+      if (newQuantity < 1) return;
+      map['productQuantity'] = newQuantity;
+      map['productTotalPrice'] = double.parse(map['fullPrice']) * newQuantity;
+      cartStringList[index] = jsonEncode(map);
+      await prefs.setStringList('cart', cartStringList);
+      await _loadCart();
+      cartController.fetchCartItemCount();
+    }
   }
 
   @override
@@ -65,44 +122,22 @@ class _CartScreenState extends State<CartScreen>
         children: [
           Expanded(
             child: SafeArea(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('cart')
-                    .doc(user!.uid)
-                    .collection('cartOrders')
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return const Center(child: Text('Có lỗi xảy ra'));
-                  }
-
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                        child: CupertinoActivityIndicator(radius: 15));
-                  }
-
-                  if (snapshot.data?.docs.isEmpty ?? true) {
-                    return const Center(
+              child: cartList.isEmpty
+                  ? const Center(
                       child: Text(
                         'Giỏ hàng trống!',
                         style: TextStyle(fontSize: 18, color: Colors.grey),
                       ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    itemCount: snapshot.data!.docs.length,
-                    itemBuilder: (context, index) {
-                      final productData = snapshot.data!.docs[index];
-                      final cartModel = CartModel.fromMap(
-                          productData.data() as Map<String, dynamic>);
-                      return _buildCartItem(cartModel);
-                    },
-                  );
-                },
-              ),
+                    )
+                  : ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      itemCount: cartList.length,
+                      itemBuilder: (context, index) {
+                        final cartModel = cartList[index];
+                        return _buildCartItem(cartModel);
+                      },
+                    ),
             ),
           ),
           _buildBottomBar(),
@@ -178,13 +213,7 @@ class _CartScreenState extends State<CartScreen>
             title: "Xóa",
             color: Colors.red,
             onTap: (CompletionHandler handler) async {
-              await FirebaseFirestore.instance
-                  .collection('cart')
-                  .doc(user!.uid)
-                  .collection('cartOrders')
-                  .doc(cartModel.productId)
-                  .delete();
-              productPriceController.fetchProductPrice();
+              await _removeFromCart(cartModel.productId);
             },
           ),
         ],
@@ -209,7 +238,7 @@ class _CartScreenState extends State<CartScreen>
                           borderRadius: BorderRadius.circular(8),
                           image: DecorationImage(
                             image: NetworkImage(
-                                cartModel.productImages[0] as String),
+                                '$BASE_URL/${cartModel.productImages[0]}'),
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -331,7 +360,8 @@ class _CartScreenState extends State<CartScreen>
                     borderRadius:
                         const BorderRadius.vertical(top: Radius.circular(16)),
                     image: DecorationImage(
-                      image: NetworkImage(cartModel.productImages[0] as String),
+                      image: NetworkImage(
+                          '$BASE_URL/${cartModel.productImages[0]}'),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -497,13 +527,15 @@ class _CartScreenState extends State<CartScreen>
   }
 
   Widget _buildBottomBar() {
+    double total =
+        cartList.fold(0, (sum, item) => sum + (item.productTotalPrice ?? 0));
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.2),
+            color: Colors.grey.withAlpha(51),
             spreadRadius: 1,
             blurRadius: 5,
           ),
@@ -512,14 +544,12 @@ class _CartScreenState extends State<CartScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Obx(
-            () => Text(
-              'Tổng: ${_currencyFormat.format(productPriceController.totalPrice.value)} đ',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppConstant.appMainColor,
-              ),
+          Text(
+            'Tổng: ${_currencyFormat.format(total)} đ',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstant.appMainColor,
             ),
           ),
           ElevatedButton(
@@ -530,7 +560,9 @@ class _CartScreenState extends State<CartScreen>
               ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            onPressed: () => Get.to(() => const CheckOutScreen()),
+            onPressed: cartList.isEmpty
+                ? null
+                : () => Get.to(() => const CheckOutScreen()),
             child: const Text(
               'Thanh toán',
               style: TextStyle(
@@ -582,23 +614,6 @@ class _CartScreenState extends State<CartScreen>
         ],
       ),
     );
-  }
-
-  Future<void> _updateQuantity(CartModel cartModel, int change) async {
-    final newQuantity = cartModel.productQuantity + change;
-    final newTotalPrice = double.parse(cartModel.fullPrice) * newQuantity;
-
-    await FirebaseFirestore.instance
-        .collection('cart')
-        .doc(user!.uid)
-        .collection('cartOrders')
-        .doc(cartModel.productId)
-        .update({
-      'productQuantity': newQuantity,
-      'productTotalPrice': newTotalPrice,
-    }).then((_) {
-      productPriceController.fetchProductPrice();
-    });
   }
 }
 

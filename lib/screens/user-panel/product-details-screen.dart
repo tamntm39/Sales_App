@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:chichanka_perfume/controllers/cart-controller.dart';
@@ -36,7 +37,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     final prefs = await SharedPreferences.getInstance();
     customerId = prefs.getInt('customerId');
     if (customerId != null) {
-      isFavorite = await FavoriteService().isFavorite(customerId!, int.parse(widget.productModel.productId));
+      isFavorite = await FavoriteService()
+          .isFavorite(customerId!, int.parse(widget.productModel.productId));
       setState(() {});
     }
   }
@@ -51,7 +53,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     });
     bool result;
     if (isFavorite) {
-      result = await FavoriteService().removeFavorite(customerId!, int.parse(widget.productModel.productId));
+      result = await FavoriteService().removeFavorite(
+          customerId!, int.parse(widget.productModel.productId));
       if (result) {
         setState(() {
           isFavorite = false;
@@ -59,7 +62,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         Get.snackbar("Đã xóa", "Đã xóa khỏi danh sách yêu thích");
       }
     } else {
-      result = await FavoriteService().addFavorite(customerId!, int.parse(widget.productModel.productId));
+      result = await FavoriteService()
+          .addFavorite(customerId!, int.parse(widget.productModel.productId));
       if (result) {
         setState(() {
           isFavorite = true;
@@ -77,6 +81,49 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return formatter.format(double.parse(price));
   }
 
+  Future<void> addToCartLocal() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> cartList = prefs.getStringList('cart') ?? [];
+
+    int index = cartList.indexWhere((item) {
+      final map = jsonDecode(item);
+      return map['productId'] == widget.productModel.productId;
+    });
+
+    if (index != -1) {
+      final map = jsonDecode(cartList[index]);
+      map['productQuantity'] += 1;
+      map['productTotalPrice'] =
+          double.parse(map['fullPrice']) * map['productQuantity'];
+      cartList[index] = jsonEncode(map);
+      Get.snackbar("Thành công", "Đã cập nhật số lượng cây trong giỏ hàng");
+    } else {
+      CartModel cartModel = CartModel(
+        productId: widget.productModel.productId,
+        categoryId: widget.productModel.categoryId,
+        productName: widget.productModel.productName,
+        categoryName: widget.productModel.categoryName,
+        salePrice: widget.productModel.salePrice,
+        fullPrice: widget.productModel.fullPrice,
+        productImages: widget.productModel.productImages,
+        deliveryTime: widget.productModel.deliveryTime,
+        isSale: widget.productModel.isSale,
+        productDescription: widget.productModel.productDescription,
+        createdAt: DateTime.now().toIso8601String(),
+        updatedAt: DateTime.now().toIso8601String(),
+        productQuantity: 1,
+        productTotalPrice: double.parse(widget.productModel.isSale
+            ? widget.productModel.salePrice
+            : widget.productModel.fullPrice),
+      );
+      cartList.add(jsonEncode(cartModel.toMap()));
+      Get.snackbar("Thành công", "Đã thêm cây vào giỏ hàng");
+    }
+
+    await prefs.setStringList('cart', cartList);
+    cartController.fetchCartItemCount();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,7 +138,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        // Đã xóa icon tim ở actions, chỉ giữ lại icon giỏ hàng nếu cần
         actions: [
           Obx(() => Stack(
                 children: [
@@ -267,7 +313,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                     isFavorite
                                         ? Icons.favorite
                                         : Icons.favorite_border,
-                                    color: isFavorite ? Colors.red : Colors.grey,
+                                    color:
+                                        isFavorite ? Colors.red : Colors.grey,
                                     size: 28,
                                   ),
                                 ),
@@ -382,8 +429,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 icon: Icons.add_shopping_cart,
                                 color: Colors.green.shade600,
                                 onPressed: () async {
-                                  // Nếu bạn có API backend cho giỏ hàng thì gọi ở đây
-                                  Get.snackbar("Thông báo", "Chức năng giỏ hàng chưa tích hợp backend!");
+                                  await addToCartLocal();
+                                  cartController.triggerAddToCartAnimation();
                                 },
                               ),
                             ),

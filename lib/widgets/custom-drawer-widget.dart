@@ -57,12 +57,12 @@ class DrawerWidget extends StatelessWidget {
         // Loại bỏ trùng lặp và trả về danh sách
         return scentPreferences.isNotEmpty
             ? scentPreferences.toSet().toList()
-            : ['Floral', 'Woody', 'Citrus']; // Mặc định nếu không có dữ liệu
+            : ['Trang trí', 'Phong thủy', 'Quà tặng']; // Mặc định nếu không có dữ liệu
       }
-      return ['Floral', 'Woody', 'Citrus']; // Mặc định nếu không có người dùng
+      return ['Trang trí', 'Phong thủy', 'Quà tặng']; // Mặc định nếu không có người dùng
     } catch (e) {
       print('Error fetching suggestions: $e');
-      return ['Floral', 'Woody', 'Citrus']; // Mặc định khi có lỗi
+      return ['Trang trí', 'Phong thủy', 'Quà tặng']; // Mặc định khi có lỗi
     }
   }
 
@@ -216,7 +216,7 @@ class DrawerWidget extends StatelessWidget {
         ),
         _buildMenuItem(
           context: context,
-          title: "Gợi ý nước hoa",
+          title: "Gợi ý sản phẩm",
           icon: Icons.recommend,
           textColor: Colors.black,
           onTap: () async {

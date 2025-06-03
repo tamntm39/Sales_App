@@ -1,16 +1,15 @@
-import 'package:chichanka_perfume/controllers/get-customer-device-token-controller.dart';
+import 'dart:convert';
+import 'package:chichanka_perfume/controllers/cart-price-controller.dart';
 import 'package:chichanka_perfume/models/cart-model.dart';
 import 'package:chichanka_perfume/screens/user-panel/confirm_checkout.dart';
-import 'package:chichanka_perfume/services/place-order-service.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_swipe_action_cell/core/cell.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import '../../controllers/cart-price-controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chichanka_perfume/config.dart';
 
 class CheckOutScreen extends StatefulWidget {
   const CheckOutScreen({super.key});
@@ -20,10 +19,47 @@ class CheckOutScreen extends StatefulWidget {
 }
 
 class _CheckOutScreenState extends State<CheckOutScreen> {
-  final User? user = FirebaseAuth.instance.currentUser;
   final ProductPriceController productPriceController =
       Get.put(ProductPriceController());
   final NumberFormat _currencyFormat = NumberFormat('#,##0', 'vi_VN');
+  List<CartModel> cartList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCart();
+  }
+
+  Future<void> _loadCart() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> cartStringList = prefs.getStringList('cart') ?? [];
+    setState(() {
+      cartList = cartStringList.map((item) {
+        final map = jsonDecode(item);
+        if (map['productImages'] is List) {
+          map['productImages'] =
+              List<String>.from(map['productImages'].map((e) => e.toString()));
+        } else if (map['productImages'] is String) {
+          map['productImages'] = [map['productImages'].toString()];
+        }
+        return CartModel.fromMap(map);
+      }).toList();
+    });
+    productPriceController.fetchProductPrice();
+  }
+
+  Future<void> _removeFromCart(String productId) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> cartStringList = prefs.getStringList('cart') ?? [];
+    cartStringList.removeWhere((item) {
+      final map = jsonDecode(item);
+      return map['productId'] == productId;
+    });
+    await prefs.setStringList('cart', cartStringList);
+    await _loadCart();
+    productPriceController.fetchProductPrice();
+    Get.snackbar("Thành công", "Đã xóa sản phẩm khỏi giỏ hàng");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,44 +75,22 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('cart')
-              .doc(user!.uid)
-              .collection('cartOrders')
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return const Center(child: Text('Có lỗi xảy ra'));
-            }
-
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                  child: CupertinoActivityIndicator(radius: 15));
-            }
-
-            if (snapshot.data?.docs.isEmpty ?? true) {
-              return const Center(
+        child: cartList.isEmpty
+            ? const Center(
                 child: Text(
                   'Không có sản phẩm để thanh toán!',
                   style: TextStyle(fontSize: 18, color: Colors.grey),
                 ),
-              );
-            }
-
-            return ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              itemCount: snapshot.data!.docs.length,
-              itemBuilder: (context, index) {
-                final productData = snapshot.data!.docs[index];
-                final cartModel = CartModel.fromMap(
-                    productData.data() as Map<String, dynamic>);
-                return _buildCheckoutItem(cartModel);
-              },
-            );
-          },
-        ),
+              )
+            : ListView.builder(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                itemCount: cartList.length,
+                itemBuilder: (context, index) {
+                  final cartModel = cartList[index];
+                  return _buildCheckoutItem(cartModel);
+                },
+              ),
       ),
       bottomNavigationBar: _buildBottomBar(),
     );
@@ -92,13 +106,7 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
             title: "Xóa",
             color: Colors.red,
             onTap: (CompletionHandler handler) async {
-              await FirebaseFirestore.instance
-                  .collection('cart')
-                  .doc(user!.uid)
-                  .collection('cartOrders')
-                  .doc(cartModel.productId)
-                  .delete();
-              productPriceController.fetchProductPrice();
+              await _removeFromCart(cartModel.productId);
             },
           ),
         ],
@@ -122,7 +130,9 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
                           image: DecorationImage(
-                            image: NetworkImage(cartModel.productImages[0]),
+                            image: NetworkImage(
+                              '$BASE_URL/${cartModel.productImages[0]}',
+                            ),
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -250,7 +260,9 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
                     borderRadius:
                         const BorderRadius.vertical(top: Radius.circular(16)),
                     image: DecorationImage(
-                      image: NetworkImage(cartModel.productImages[0]),
+                      image: NetworkImage(
+                        '$BASE_URL/${cartModel.productImages[0]}',
+                      ),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -352,6 +364,8 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
   }
 
   Widget _buildBottomBar() {
+    double total =
+        cartList.fold(0, (sum, item) => sum + (item.productTotalPrice ?? 0));
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -367,14 +381,12 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Obx(
-            () => Text(
-              'Tổng: ${_currencyFormat.format(productPriceController.totalPrice.value)} đ',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppConstant.appMainColor,
-              ),
+          Text(
+            'Tổng: ${_currencyFormat.format(total)} đ',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstant.appMainColor,
             ),
           ),
           ElevatedButton(
@@ -385,7 +397,9 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            onPressed: () => showCustomBottomSheet(),
+            onPressed: cartList.isEmpty
+                ? null
+                : () => _showConfirmCheckoutBottomSheet(cartList),
             child: const Text(
               'Xác nhận đơn hàng',
               style: TextStyle(
@@ -397,5 +411,10 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
         ],
       ),
     );
+  }
+
+  // Đổi tên hàm để tránh đệ quy vô hạn
+  void _showConfirmCheckoutBottomSheet(List<CartModel> cartList) {
+    showCustomBottomSheet(cartList);
   }
 }
