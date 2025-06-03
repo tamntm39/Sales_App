@@ -58,4 +58,21 @@ class OrderService {
     }
     return [];
   }
+
+  // Hàm kiểm tra mã khuyến mãi
+  Future<Map<String, dynamic>?> checkPromotionCode(
+      String code, double totalAmount) async {
+    final response = await http.post(
+      Uri.parse('$BASE_URL/api/Promotion/CheckPromotionCode'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "promotionCode": code,
+        "totalAmount": totalAmount,
+      }),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    return null;
+  }
 }
