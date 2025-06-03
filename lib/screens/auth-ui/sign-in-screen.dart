@@ -12,9 +12,11 @@ import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:chichanka_perfume/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chichanka_perfume/screens/auth-ui/welcome-screen.dart';
 
 class SignInScreen extends StatefulWidget {
-  const SignInScreen({super.key});
+  final bool showBackToSignUp;
+  const SignInScreen({super.key, this.showBackToSignUp = false});
 
   @override
   State<SignInScreen> createState() => _SigninScreenState();
@@ -36,10 +38,20 @@ class _SigninScreenState extends State<SignInScreen> {
           appBar: AppBar(
             backgroundColor: AppConstant.navy,
             centerTitle: true,
+            iconTheme: IconThemeData(color: Colors.white),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () {
+                // Luôn quay về Welcome
+                Get.offAll(() => WelcomeScreen());
+              },
+            ),
             title: Text(
               'ĐĂNG NHẬP',
               style: TextStyle(
-                  color: AppConstant.appTextColor, fontWeight: FontWeight.bold),
+                color: AppConstant.appTextColor,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           body: SingleChildScrollView(
@@ -237,7 +249,8 @@ class _SigninScreenState extends State<SignInScreen> {
               if (result['success'] == true) {
                 final userData = result['data'];
                 final prefs = await SharedPreferences.getInstance();
-                await prefs.setInt('customerId', userData['customerId']); // Lưu customerId
+                await prefs.setInt(
+                    'customerId', userData['customerId']); // Lưu customerId
 
                 Get.offAll(() => MainScreen());
                 Get.snackbar(

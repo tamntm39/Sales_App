@@ -221,7 +221,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   backgroundColor: AppConstant.navy,
                   colorText: AppConstant.appTextColor,
                 );
-                Get.offAll(() => SignInScreen());
+                Get.off(() => SignInScreen());
               } else {
                 Get.snackbar(
                   "Lỗi",
@@ -255,7 +255,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           style: TextStyle(color: AppConstant.navy),
         ),
         GestureDetector(
-          onTap: () => Get.offAll(() => SignInScreen()),
+          onTap: () => Get.off(() => SignInScreen()),
           child: Text(
             "Đăng nhập",
             style: TextStyle(
