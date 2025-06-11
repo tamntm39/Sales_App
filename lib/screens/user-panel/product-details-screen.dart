@@ -21,6 +21,24 @@ class ProductDetailsScreen extends StatefulWidget {
   State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
 }
 
+// Chuyển đổi từ SaleOffProduct (hoặc Map) sang ProductModel
+ProductModel convertToProductModel(dynamic apiProduct) {
+  return ProductModel(
+    productId: apiProduct['productId'].toString(),
+    categoryId: '', // hoặc lấy từ API nếu có
+    productName: apiProduct['name'] ?? '',
+    categoryName: '', // hoặc lấy từ API nếu có
+    salePrice: (apiProduct['finalPrice'] ?? 0).toString(),
+    fullPrice: (apiProduct['priceOutput'] ?? 0).toString(),
+    productImages: [apiProduct['img'] ?? ''],
+    deliveryTime: '',
+    isSale: true,
+    productDescription: '',
+    createdAt: '',
+    updatedAt: '',
+  );
+}
+
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   bool isFavorite = false;
   bool isAnimatingFavorite = false;
