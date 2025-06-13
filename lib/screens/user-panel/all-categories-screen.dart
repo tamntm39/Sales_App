@@ -83,7 +83,7 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
                           borderRadius: BorderRadius.circular(18),
                           onTap: () {
                             Get.to(() => AllSingleCategoryProductsScreen(
-                                categoryId: category.categoryId.toString()));
+                              categoryId: category.categoryId,));
                           },
                           child: Container(
                             decoration: BoxDecoration(

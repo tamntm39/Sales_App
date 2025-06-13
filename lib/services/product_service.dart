@@ -36,4 +36,10 @@ class ProductService {
   static Future<List<ProductApiModel>> fetchProducts() {
     return _repo.fetchProducts();
   }
+
+  static Future<List<ProductApiModel>> fetchProductsByCategory(int categoryId) async {
+    final allProducts = await _repo.fetchProducts();
+    return allProducts.where((p) => p.categoryId == categoryId).toList();
+  }
 }
+

@@ -3,7 +3,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chichanka_perfume/models/categories-model.dart';
 import 'package:chichanka_perfume/screens/user-panel/single-category-products-screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:image_card/image_card.dart';
@@ -52,7 +51,7 @@ class CategoriesWidget extends StatelessWidget {
                 children: [
                   GestureDetector(
                     onTap: () => Get.to(() => AllSingleCategoryProductsScreen(
-                        categoryId: category.categoryId.toString())),
+                        categoryId: category.categoryId)),
                     child: Padding(
                       padding: EdgeInsets.all(5.0),
                       child: Container(
