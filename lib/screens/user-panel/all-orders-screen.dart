@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:chichanka_perfume/config.dart';
 
 class OrderGroup {
   final int orderId;
@@ -34,8 +33,8 @@ class AllOrdersScreen extends StatefulWidget {
 
 class _AllOrdersScreenState extends State<AllOrdersScreen> {
   final ProductPriceController productPriceController =
-      Get.put(ProductPriceController());
-  dynamic _filterStatus = 'all'; // String hoặc int
+  Get.put(ProductPriceController());
+  dynamic _filterStatus = 'all';
   late Future<List<OrderApiModel>> _ordersFuture;
   int? customerId;
 
@@ -78,7 +77,6 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
   List<OrderGroup> _filterOrderGroups(List<OrderGroup> groups) {
     if (_filterStatus == 'all') return groups;
     if (_filterStatus == 4) {
-      // Hủy: state > 3
       return groups.where((group) => group.state > 3).toList();
     }
     return groups.where((group) => group.state == _filterStatus).toList();
@@ -154,7 +152,7 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
       {'label': 'Đã duyệt', 'value': 1},
       {'label': 'Đang giao', 'value': 2},
       {'label': 'Đã nhận', 'value': 3},
-      {'label': 'Hủy', 'value': 4}, // 4 đại diện cho state > 3
+      {'label': 'Hủy', 'value': 4},
     ];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -173,7 +171,7 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: isSelected ? AppConstant.appMainColor : Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -248,13 +246,13 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
             ),
             const SizedBox(height: 8),
             ...group.items.map((item) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading:
-                      Icon(Icons.shopping_bag, color: AppConstant.appMainColor),
-                  title: Text(item.productName),
-                  subtitle: Text("Số lượng: ${item.productQuantity}"),
-                  trailing: Text(formatter.format(item.priceOutput)),
-                )),
+              contentPadding: EdgeInsets.zero,
+              leading:
+              Icon(Icons.shopping_bag, color: AppConstant.appMainColor),
+              title: Text(item.productName),
+              subtitle: Text("Số lượng: ${item.productQuantity}"),
+              trailing: Text(formatter.format(item.priceOutput)),
+            )),
             const Divider(),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -273,22 +271,58 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
             ),
             const SizedBox(height: 8),
             _buildStatusChip(group.state),
-            if (group.state == 1)
+            const SizedBox(height: 8),
+            if (group.state == 0)
               Align(
                 alignment: Alignment.centerRight,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Gửi đánh giá cho đơn hàng này (nếu muốn)
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text("Xác nhận"),
+                        content:
+                        const Text("Bạn có chắc muốn hủy đơn hàng này không?"),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text("Không"),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text("Có"),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      bool isCancelled =
+                      await OrderService().cancelOrder(group.orderId);
+
+                      if (isCancelled) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text("Hủy đơn hàng thành công")),
+                        );
+                        _refreshOrders();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text("Hủy đơn hàng thất bại")),
+                        );
+                      }
+                    }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppConstant.appMainColor,
+                    backgroundColor: Colors.red,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   child: const Text(
-                    "Đánh giá",
+                    "Hủy đơn",
                     style: TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),

@@ -75,4 +75,21 @@ class OrderService {
     }
     return null;
   }
+  Future<bool> cancelOrder(int orderId) async {
+    final url = Uri.parse('$BASE_URL/api/Order/CancelOrder?orderId=$orderId');
+
+    try {
+      final response = await http.post(url);
+      if (response.statusCode == 200) {
+        final jsonBody = jsonDecode(response.body);
+        return jsonBody['success'] == true && jsonBody['data'] == true;
+      } else {
+        print('CancelOrder failed: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      print('CancelOrder error: $e');
+    }
+
+    return false;
+  }
 }
