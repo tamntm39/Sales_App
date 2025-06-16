@@ -8,6 +8,12 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:app_links/app_links.dart';
+import 'package:chichanka_perfume/config.dart';
+
+import 'package:flutter_paypal_payment/flutter_paypal_payment.dart';
 
 void showCustomBottomSheet(List<CartModel> cartList) {
   final TextEditingController couponController = TextEditingController();
@@ -282,32 +288,188 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                       final prefs = await SharedPreferences.getInstance();
                       final customerId = prefs.getInt('customerId') ?? 0;
 
-                      final orderService = OrderService();
-                      final success = await orderService.createOrder(
-                        customerId: customerId,
-                        note:
-                            'Tên: ${nameController.text}, SĐT: ${phoneController.text}, Địa chỉ: ${addressController.text}',
-                        promotionId: 0,
-                        promotionCode: couponController.text.trim(),
-                        cartList: cartList,
-                      );
+                      if (selectedPaymentMethod == 'Thanh toán qua PayPal') {
+                        double totalAmount = cartList.fold(
+                            0, (sum, item) => sum + item.productTotalPrice);
 
-                      if (success) {
-                        Get.offAll(() => MainScreen());
-                        Get.snackbar(
-                          'Thành công',
-                          'Đặt hàng thành công!',
-                          backgroundColor: Colors.green,
-                          colorText: Colors.white,
-                        );
-                        await prefs.remove('cart');
+                        try {
+                          // Step 1: Create Order API Call
+                          final createOrderResponse = await http.post(
+                            Uri.parse('$BASE_URL/api/Order/Create'),
+                            headers: {'Content-Type': 'application/json'},
+                            body: jsonEncode({
+                              "customerId":
+                                  customerId, // Replace with the actual customer ID
+                              "note":
+                                  "Your order note here", // Replace with the actual note if needed
+                              "promotionId":
+                                  0, // Replace with the actual promotion ID if applicable
+                              "promotionCode": couponController.text
+                                  .trim(), // Replace with the actual promotion code if applicable
+                              "cartItems": cartList.map((item) {
+                                return {
+                                  "productId": item.productId,
+                                  "quantity": item.productQuantity,
+                                };
+                              }).toList(),
+                            }),
+                          );
+
+                          if (createOrderResponse.statusCode == 200) {
+                            final createOrderData =
+                                jsonDecode(createOrderResponse.body);
+                            final orderId = createOrderData[
+                                'data']; // Extract orderId from response
+
+                            // Step 2: Navigate to PayPal Checkout
+                            Navigator.of(context).push(MaterialPageRoute(
+                              builder: (BuildContext context) =>
+                                  PaypalCheckoutView(
+                                sandboxMode: true,
+                                clientId:
+                                    "AXAl-vVyydICzwStxvMLyA53LuFjVrRONwiZWU5kLqzjOgQGLuKWJ0ajOlzpmiYLi5ea8QrxZ9PP0TG1",
+                                secretKey:
+                                    "EJT5yyTPgJrsiWJerUbb4BGD2swipXXATg5ui5WAIJN5h-mn1zwqKfNTp28fg9farK7H1aFzsct59_NM",
+                                transactions: [
+                                  {
+                                    "amount": {
+                                      "total": totalAmount.toString(),
+                                      "currency": "USD",
+                                      "details": {
+                                        "subtotal": totalAmount.toString(),
+                                        "shipping": '0',
+                                        "shipping_discount": 0
+                                      }
+                                    },
+                                    "description":
+                                        "The payment transaction description.",
+                                    "item_list": {
+                                      "items": cartList.map((item) {
+                                        return {
+                                          "name": item.productName,
+                                          "quantity": item
+                                              .productQuantity, // Replace with the actual quantity
+                                          "price": totalAmount.toString(),
+                                          "currency": "USD"
+                                        };
+                                      }).toList(),
+                                    }
+                                  }
+                                ],
+                                note:
+                                    "Contact us for any questions on your order.",
+                                onSuccess: (Map params) async {
+                                  try {
+                                    // Step 3: Capture Order API Call
+                                    final captureOrderResponse = await http.post(
+                                        Uri.parse(
+                                            '$BASE_URL/api/Order/CaptureOrder?orderId=$orderId'),
+                                        headers: {
+                                          'Content-Type': 'application/json'
+                                        });
+
+                                    if (captureOrderResponse.statusCode ==
+                                        200) {
+                                      print(
+                                          "Order captured successfully: ${captureOrderResponse.body}");
+                                      Get.snackbar(
+                                        'Thành công',
+                                        'Thanh toán thành công!',
+                                        backgroundColor: Colors.green,
+                                        colorText: Colors.white,
+                                      );
+                                    } else {
+                                      print(
+                                          "Failed to capture order: ${captureOrderResponse.body}");
+                                      Get.snackbar(
+                                        'Lỗi',
+                                        'Không thể xác nhận thanh toán!',
+                                        backgroundColor: Colors.red,
+                                        colorText: Colors.white,
+                                      );
+                                    }
+                                  } catch (error) {
+                                    print("Error: $error");
+                                    Get.snackbar(
+                                      'Lỗi',
+                                      'Đã xảy ra lỗi khi xử lý thanh toán!',
+                                      backgroundColor: Colors.red,
+                                      colorText: Colors.white,
+                                    );
+                                  } finally {
+                                    Navigator.pop(context);
+                                  }
+                                },
+                                onError: (error) {
+                                  print("Payment Error: $error");
+                                  Get.snackbar(
+                                    'Lỗi',
+                                    'Thanh toán PayPal thất bại! Vui lòng thử lại.',
+                                    backgroundColor: Colors.red,
+                                    colorText: Colors.white,
+                                  );
+                                  Navigator.pop(context);
+                                },
+                                onCancel: () {
+                                  print("Payment Cancelled");
+                                  Get.snackbar(
+                                    'Hủy bỏ',
+                                    'Bạn đã hủy thanh toán qua PayPal.',
+                                    backgroundColor: Colors.orange,
+                                    colorText: Colors.white,
+                                  );
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            ));
+                          } else {
+                            print(
+                                "Failed to create order: ${createOrderResponse.body}");
+                            Get.snackbar(
+                              'Lỗi',
+                              'Không thể tạo đơn hàng!',
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          }
+                        } catch (error) {
+                          print("Error: $error");
+                          Get.snackbar(
+                            'Lỗi',
+                            'Đã xảy ra lỗi khi tạo đơn hàng!',
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                        }
                       } else {
-                        Get.snackbar(
-                          'Lỗi',
-                          'Đặt hàng thất bại! Vui lòng thử lại.',
-                          backgroundColor: Colors.red,
-                          colorText: Colors.white,
+                        // Handle other payment methods
+                        final orderService = OrderService();
+                        final success = await orderService.createOrder(
+                          customerId: customerId,
+                          note:
+                              'Tên: ${nameController.text}, SĐT: ${phoneController.text}, Địa chỉ: ${addressController.text}',
+                          promotionId: 0,
+                          promotionCode: couponController.text.trim(),
+                          cartList: cartList,
                         );
+
+                        if (success) {
+                          Get.offAll(() => MainScreen());
+                          Get.snackbar(
+                            'Thành công',
+                            'Đặt hàng thành công!',
+                            backgroundColor: Colors.green,
+                            colorText: Colors.white,
+                          );
+                          await prefs.remove('cart');
+                        } else {
+                          Get.snackbar(
+                            'Lỗi',
+                            'Đặt hàng thất bại! Vui lòng thử lại.',
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                        }
                       }
                     } else {
                       Get.snackbar(
