@@ -18,6 +18,7 @@ class WelcomeScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         backgroundColor: AppConstant.navy,
+        automaticallyImplyLeading: false,
         title: Padding(
           padding: const EdgeInsets.only(top: 30.0), // Dời logo xuống 10 pixel
           child: Image.asset(
