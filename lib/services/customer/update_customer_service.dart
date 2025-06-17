@@ -10,18 +10,23 @@ class UpdateCustomerService {
     required String phone,
     required String email,
     required String address,
+    String? password, // Thêm trường password (nullable)
   }) async {
     try {
+      final body = {
+        'customerId': int.parse(customerId),
+        'fullname': fullname,
+        'phone': phone,
+        'email': email,
+        'address': address,
+      };
+      if (password != null && password.isNotEmpty) {
+        body['password'] = password;
+      }
       final response = await http.put(
         Uri.parse('$baseUrl/Customer/UpdateCustomer'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'customerId': int.parse(customerId),
-          'fullname': fullname,
-          'phone': phone,
-          'email': email,
-          'address': address,
-        }),
+        body: jsonEncode(body),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

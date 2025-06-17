@@ -1,3 +1,8 @@
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 import 'package:chichanka_perfume/models/user-model.dart';
 import 'package:chichanka_perfume/screens/user-panel/all-products-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
@@ -21,6 +26,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   UserModel? _userModel;
   int _selectedIndex = 2;
 
+  File? _avatarImage;
+  bool _isUploadingAvatar = false;
+
   @override
   void initState() {
     super.initState();
@@ -34,8 +42,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (customerId != null) {
         final result = await GetCustomerService().getCustomer(customerId);
         if (result['success']) {
+          final data = result['data'];
+          final imgUrl = data['image']; // lấy đúng trường 'image' từ BE
+          final fullImgUrl = (imgUrl != null && imgUrl.startsWith('/'))
+              ? 'http://10.0.2.2:7072$imgUrl'
+              : imgUrl ?? '';
           setState(() {
-            _userModel = UserModel.fromMap(result['data']);
+            _userModel = UserModel.fromMap({...data, 'userImg': fullImgUrl});
           });
         } else {
           Get.snackbar("Lỗi", result['message'] ?? "Không thể tải thông tin người dùng");
@@ -81,6 +94,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         TextEditingController(text: _userModel?.email);
     final TextEditingController addressController =
         TextEditingController(text: _userModel?.userAddress);
+    final TextEditingController passwordController =
+        TextEditingController(); // Thêm controller cho mật khẩu mới
 
     showDialog(
       context: context,
@@ -107,6 +122,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   controller: addressController,
                   decoration: const InputDecoration(labelText: "Địa chỉ"),
                 ),
+                TextField(
+                  controller: passwordController,
+                  decoration: const InputDecoration(
+                    labelText: "Mật khẩu mới (bỏ trống nếu không đổi)",
+                  ),
+                  obscureText: true,
+                ),
               ],
             ),
           ),
@@ -127,6 +149,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       phone: phoneController.text,
                       email: emailController.text,
                       address: addressController.text,
+                      password: passwordController.text.isNotEmpty
+                          ? passwordController.text
+                          : null, // Chỉ truyền nếu có nhập
                     );
                     if (result['success']) {
                       setState(() {
@@ -153,6 +178,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
+  }
+
+  Future<void> _pickAvatarImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _avatarImage = File(pickedFile.path);
+      });
+      await _uploadAvatarImage();
+    }
+  }
+
+  Future<void> _uploadAvatarImage() async {
+    if (_avatarImage == null || _userModel == null) return;
+    setState(() => _isUploadingAvatar = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      int? customerId = prefs.getInt('customerId');
+      if (customerId == null) return;
+
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('http://10.0.2.2:7072/api/Customer/UploadAvatar/UploadAvatar?customerId=$customerId'),
+      );
+      request.files.add(await http.MultipartFile.fromPath('avatar', _avatarImage!.path));
+      var response = await request.send();
+
+      print('Status code: ${response.statusCode}');
+      final respStr = await response.stream.bytesToString();
+      print('Response body: $respStr');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(respStr);
+        final fullUrl = 'http://10.0.2.2:7072' + data['imageUrl'];
+        setState(() {
+          _userModel = _userModel?.copyWith(userImg: fullUrl);
+        });
+        Get.snackbar("Thành công", "Cập nhật ảnh đại diện thành công!");
+      } else {
+        Get.snackbar("Lỗi", "Không thể cập nhật ảnh đại diện");
+      }
+    } catch (e) {
+      Get.snackbar("Lỗi", "Không thể cập nhật ảnh đại diện");
+    }
+    setState(() => _isUploadingAvatar = false);
   }
 
   @override
@@ -198,6 +269,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 48,
+                              backgroundImage: _avatarImage != null
+                                  ? FileImage(_avatarImage!)
+                                  : (_userModel?.userImg != null &&
+                                          _userModel!.userImg.isNotEmpty &&
+                                          _userModel!.userImg.startsWith('http'))
+                                      ? NetworkImage(_userModel!.userImg)
+                                      : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: InkWell(
+                                onTap: _isUploadingAvatar ? null : _pickAvatarImage,
+                                child: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Colors.blue,
+                                  child: _isUploadingAvatar
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                        )
+                                      : const Icon(Icons.camera_alt, color: Colors.white, size: 18),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 12),
