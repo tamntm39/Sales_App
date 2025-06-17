@@ -301,7 +301,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                               "customerId":
                                   customerId, // Replace with the actual customer ID
                               "note":
-                                  "Your order note here", // Replace with the actual note if needed
+                                 'Tên: ${nameController.text}, SĐT: ${phoneController.text}, Địa chỉ: ${addressController.text}',
                               "promotionId":
                                   0, // Replace with the actual promotion ID if applicable
                               "promotionCode": couponController.text
@@ -378,6 +378,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                                         backgroundColor: Colors.green,
                                         colorText: Colors.white,
                                       );
+                                     Navigator.pop(context); 
                                     } else {
                                       print(
                                           "Failed to capture order: ${captureOrderResponse.body}");
