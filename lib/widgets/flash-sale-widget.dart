@@ -8,11 +8,13 @@ import 'package:get/get.dart';
 import 'package:image_card/image_card.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
+import '../../config.dart';
+
 import 'package:http/http.dart' as http;
 
 String getImageUrl(String img) {
   String path = img.replaceAll('\\', '/');
-  return 'http://192.168.1.102:7072/$path'; // Đổi IP cho đúng backend của bạn
+  return '$BASE_URL/$path'; // Đổi IP cho đúng backend của bạn
 }
 
 class FlashSaleWidget extends StatelessWidget {
@@ -21,7 +23,7 @@ class FlashSaleWidget extends StatelessWidget {
   Future<List<SaleOffProduct>> fetchFlashSaleProducts() async {
     final response = await http.get(
       Uri.parse(
-          'http://192.168.1.102:7072/api/Product/GetSaleOffProducts'), // Đổi IP theo backend của bạn
+          '$BASE_URL/api/Product/GetSaleOffProducts'), // Đổi IP theo backend của bạn
     );
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);

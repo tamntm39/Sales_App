@@ -12,12 +12,13 @@ import '../../models/sale_off_product_model.dart'; // Model riêng cho sản ph�
 import '../../utils/app-constant.dart';
 import 'package:chichanka_perfume/models/product-model.dart';
 import 'package:chichanka_perfume/models/sale_off_product_model.dart';
+import '../../config.dart';
 
 String getImageUrl(String img) {
   // Đổi dấu \ thành /
   String path = img.replaceAll('\\', '/');
   // Nối domain và port backend vào đường dẫn
-  return 'http://192.168.1.102:7072/$path'; // Đổi IP cho đúng backend của bạn
+  return '$BASE_URL/$path'; // Đổi IP cho đúng backend của bạn
 }
 
 // Hàm chuyển SaleOffProduct (object) sang ProductModel
@@ -47,7 +48,7 @@ String formatPrice(num price) {
 // Hàm lấy dữ liệu từ API
 Future<List<SaleOffProduct>> fetchSaleOffProducts() async {
   final response = await http.get(
-      Uri.parse('http://192.168.1.102:7072/api/Product/GetSaleOffProducts'));
+      Uri.parse('$BASE_URL/api/Product/GetSaleOffProducts'));
   if (response.statusCode == 200) {
     final jsonData = json.decode(response.body);
     if (jsonData['success'] == true && jsonData['data'] != null) {
