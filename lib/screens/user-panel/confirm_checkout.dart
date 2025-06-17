@@ -301,7 +301,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                               "customerId":
                                   customerId, // Replace with the actual customer ID
                               "note":
-                                 'Tên: ${nameController.text}, SĐT: ${phoneController.text}, Địa chỉ: ${addressController.text}',
+                                  'Tên: ${nameController.text}, SĐT: ${phoneController.text}, Địa chỉ: ${addressController.text}',
                               "promotionId":
                                   0, // Replace with the actual promotion ID if applicable
                               "promotionCode": couponController.text
@@ -378,7 +378,14 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                                         backgroundColor: Colors.green,
                                         colorText: Colors.white,
                                       );
-                                     Navigator.pop(context); 
+                                      //  Navigator.pop(context);
+                                      await prefs.remove('cart');
+
+                                      // Điều hướng về MainScreen
+                                      Future.delayed(Duration(seconds: 1), () {
+                                        Get.offAll(() =>
+                                            MainScreen()); // Điều hướng sau khi xử lý xong
+                                      });
                                     } else {
                                       print(
                                           "Failed to capture order: ${captureOrderResponse.body}");
