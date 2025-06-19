@@ -188,7 +188,7 @@ extension ProductModelExtension on ProductModel {
       categoryName: data['categoryName'],
       salePrice: data['salePrice'],
       fullPrice: data['fullPrice'],
-      productImages: List<String>.from(data['productImages']),
+       productImages: data['productImages'],
       deliveryTime: data['deliveryTime'],
       isSale: data['isSale'],
       productDescription: data['productDescription'],

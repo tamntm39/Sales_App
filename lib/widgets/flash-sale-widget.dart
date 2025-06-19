@@ -46,13 +46,20 @@ class FlashSaleWidget extends StatelessWidget {
             itemBuilder: (context, index) {
               final productData = snapshot.data!.docs[index];
               ProductModel productModel = ProductModel(
+                
+                  
+
+
                 productId: productData['productId'],
                 categoryId: productData['categoryId'],
                 productName: productData['productName'],
                 categoryName: productData['categoryName'],
                 salePrice: productData['salePrice'],
                 fullPrice: productData['fullPrice'],
-                productImages: productData['productImages'],
+               productImages: (productData['productImages'] as List<dynamic>)
+            .where((e) => e != null && e.toString().trim().isNotEmpty)
+            .map((e) => e.toString())
+            .toList(),
                 deliveryTime: productData['deliveryTime'],
                 isSale: productData['isSale'],
                 productDescription: productData['productDescription'],

@@ -8,8 +8,8 @@ class AuthService {
       final response = await _dio.post(
         '$baseUrl/Login', // Đúng endpoint: /api/Customer/Login
         data: {
-          "email": email,
-          "password": password,
+          "Email": email,
+          "Password": password,
         },
         options: Options(
           headers: {'Content-Type': 'application/json'},
