@@ -24,6 +24,9 @@ void showCustomBottomSheet(List<CartModel> cartList) {
   final NumberFormat _currencyFormat = NumberFormat('#,##0', 'vi_VN');
   double discount = 0.0;
 
+  // Thêm biến trạng thái để kiểm soát hiệu ứng tải QR
+  bool _isLoadingQr = false;
+
   Get.bottomSheet(
     StatefulBuilder(
       builder: (BuildContext context, StateSetter setState) {
@@ -98,8 +101,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                   isExpanded: true,
                   items: <String>[
                     'Thanh toán khi nhận hàng',
-                    'Thanh toán qua thẻ',
-                    'Thanh toán qua ví điện tử',
+                    'Thanh toán mã QR', // Đã đổi tên
                     'Thanh toán qua PayPal'
                   ].map((String value) {
                     return DropdownMenuItem<String>(
@@ -110,16 +112,30 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                   onChanged: (String? newValue) {
                     setState(() {
                       selectedPaymentMethod = newValue!;
+                      // Nếu chọn "Thanh toán mã QR", bắt đầu hiệu ứng tải
+                      if (newValue == 'Thanh toán mã QR') {
+                        _isLoadingQr = true;
+                        // Giả lập độ trễ 2 giây
+                        Future.delayed(const Duration(seconds: 2), () {
+                          if (context.mounted) { // Đảm bảo widget vẫn còn tồn tại trước khi gọi setState
+                            setState(() {
+                              _isLoadingQr = false;
+                            });
+                          }
+                        });
+                      } else {
+                        _isLoadingQr = false; // Reset nếu chọn phương thức khác
+                      }
                     });
                   },
                 ),
                 const SizedBox(height: 16),
-                if (selectedPaymentMethod == 'Thanh toán qua thẻ')
+                if (selectedPaymentMethod == 'Thanh toán mã QR')
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const Text(
-                        'Thông tin thẻ',
+                        'Quét mã QR để thanh toán',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -129,11 +145,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                       Container(
                         height: 200,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.blue, Colors.blueAccent],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -144,56 +156,22 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                           ],
                         ),
                         padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Align(
-                              alignment: Alignment.topRight,
-                              child: Icon(Icons.credit_card,
-                                  color: Colors.white, size: 40),
-                            ),
-                            const SizedBox(height: 20),
-                            Container(
-                              width: 40,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            const Text(
-                              '**** **** **** 1234',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 2.0,
-                              ),
-                            ),
-                            const Spacer(),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'NGUYEN VAN A',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
+                        child: AnimatedSwitcher( // Sử dụng AnimatedSwitcher để chuyển đổi mượt mà
+                          duration: const Duration(milliseconds: 500),
+                          child: _isLoadingQr
+                              ? Center(
+                                  key: const ValueKey('loading'), // Key cho AnimatedSwitcher
+                                  child: CircularProgressIndicator(
+                                    color: AppConstant.appMainColor,
+                                  ),
+                                )
+                              : Center(
+                                  key: const ValueKey('qr_code'), // Key cho AnimatedSwitcher
+                                  child: Image.network(
+                                    'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=randomstringforqr', // Một URL tạo QR code ngẫu nhiên
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
-                                const Text(
-                                  '12/26',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -361,12 +339,14 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                                 onSuccess: (Map params) async {
                                   try {
                                     // Step 3: Capture Order API Call
-                                    final captureOrderResponse = await http.post(
-                                        Uri.parse(
-                                            '$BASE_URL/api/Order/CaptureOrder?orderId=$orderId'),
-                                        headers: {
-                                          'Content-Type': 'application/json'
-                                        });
+                                    final captureOrderResponse =
+                                        await http.post(
+                                            Uri.parse(
+                                                '$BASE_URL/api/Order/CaptureOrder?orderId=$orderId'),
+                                            headers: {
+                                              'Content-Type':
+                                                  'application/json'
+                                            });
 
                                     if (captureOrderResponse.statusCode ==
                                         200) {
@@ -378,7 +358,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                                         backgroundColor: Colors.green,
                                         colorText: Colors.white,
                                       );
-                                      //  Navigator.pop(context);
+                                      // Navigator.pop(context);
                                       await prefs.remove('cart');
 
                                       // Điều hướng về MainScreen
