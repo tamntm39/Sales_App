@@ -32,6 +32,24 @@ class ProductDetailsScreen extends StatefulWidget {
   State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
 }
 
+// Chuyển đổi từ SaleOffProduct (hoặc Map) sang ProductModel
+ProductModel convertToProductModel(dynamic apiProduct) {
+  return ProductModel(
+    productId: apiProduct['productId'].toString(),
+    categoryId: '', // hoặc lấy từ API nếu có
+    productName: apiProduct['name'] ?? '',
+    categoryName: '', // hoặc lấy từ API nếu có
+    salePrice: (apiProduct['finalPrice'] ?? 0).toString(),
+    fullPrice: (apiProduct['priceOutput'] ?? 0).toString(),
+    productImages: [apiProduct['img'] ?? ''],
+    deliveryTime: '',
+    isSale: true,
+    productDescription: '',
+    createdAt: '',
+    updatedAt: '',
+  );
+}
+
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   List<ProductApiModel> relatedProducts = [];
   bool isFavorite = false;
@@ -74,15 +92,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
 
-  Future<void> loadCustomerIdAndCheckFavorite() async {
-            final prefs = await SharedPreferences.getInstance();
-            customerId = prefs.getInt('customerId');
-            if (customerId != null) {
-              isFavorite = await FavoriteService()
-                  .isFavorite(customerId!, int.parse(widget.productModel.productId));
-              setState(() {});
-            }
-          }
+            Future<void> loadCustomerIdAndCheckFavorite() async {
+                      final prefs = await SharedPreferences.getInstance();
+                      customerId = prefs.getInt('customerId');
+                      if (customerId != null) {
+                        isFavorite = await FavoriteService()
+                            .isFavorite(customerId!, int.parse(widget.productModel.productId));
+                        setState(() {});
+                      }
+                    }
 
           Future<void> fetchRelated() async {
                     if (widget.allProducts == null || widget.allProducts!.isEmpty) {

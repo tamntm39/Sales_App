@@ -8,6 +8,12 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:app_links/app_links.dart';
+import 'package:chichanka_perfume/config.dart';
+
+import 'package:flutter_paypal_payment/flutter_paypal_payment.dart';
 
 void showCustomBottomSheet(List<CartModel> cartList) {
   final TextEditingController couponController = TextEditingController();
@@ -17,6 +23,9 @@ void showCustomBottomSheet(List<CartModel> cartList) {
   final TextEditingController addressController = TextEditingController();
   final NumberFormat _currencyFormat = NumberFormat('#,##0', 'vi_VN');
   double discount = 0.0;
+
+  // Thêm biến trạng thái để kiểm soát hiệu ứng tải QR
+  bool _isLoadingQr = false;
 
   Get.bottomSheet(
     StatefulBuilder(
@@ -92,8 +101,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                   isExpanded: true,
                   items: <String>[
                     'Thanh toán khi nhận hàng',
-                    'Thanh toán qua thẻ',
-                    'Thanh toán qua ví điện tử',
+                    'Thanh toán mã QR', // Đã đổi tên
                     'Thanh toán qua PayPal'
                   ].map((String value) {
                     return DropdownMenuItem<String>(
@@ -104,16 +112,30 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                   onChanged: (String? newValue) {
                     setState(() {
                       selectedPaymentMethod = newValue!;
+                      // Nếu chọn "Thanh toán mã QR", bắt đầu hiệu ứng tải
+                      if (newValue == 'Thanh toán mã QR') {
+                        _isLoadingQr = true;
+                        // Giả lập độ trễ 2 giây
+                        Future.delayed(const Duration(seconds: 2), () {
+                          if (context.mounted) { // Đảm bảo widget vẫn còn tồn tại trước khi gọi setState
+                            setState(() {
+                              _isLoadingQr = false;
+                            });
+                          }
+                        });
+                      } else {
+                        _isLoadingQr = false; // Reset nếu chọn phương thức khác
+                      }
                     });
                   },
                 ),
                 const SizedBox(height: 16),
-                if (selectedPaymentMethod == 'Thanh toán qua thẻ')
+                if (selectedPaymentMethod == 'Thanh toán mã QR')
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const Text(
-                        'Thông tin thẻ',
+                        'Quét mã QR để thanh toán',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -123,11 +145,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                       Container(
                         height: 200,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.blue, Colors.blueAccent],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -138,56 +156,22 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                           ],
                         ),
                         padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Align(
-                              alignment: Alignment.topRight,
-                              child: Icon(Icons.credit_card,
-                                  color: Colors.white, size: 40),
-                            ),
-                            const SizedBox(height: 20),
-                            Container(
-                              width: 40,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            const Text(
-                              '**** **** **** 1234',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 2.0,
-                              ),
-                            ),
-                            const Spacer(),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'NGUYEN VAN A',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
+                        child: AnimatedSwitcher( // Sử dụng AnimatedSwitcher để chuyển đổi mượt mà
+                          duration: const Duration(milliseconds: 500),
+                          child: _isLoadingQr
+                              ? Center(
+                                  key: const ValueKey('loading'), // Key cho AnimatedSwitcher
+                                  child: CircularProgressIndicator(
+                                    color: AppConstant.appMainColor,
+                                  ),
+                                )
+                              : Center(
+                                  key: const ValueKey('qr_code'), // Key cho AnimatedSwitcher
+                                  child: Image.network(
+                                    'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=randomstringforqr', // Một URL tạo QR code ngẫu nhiên
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
-                                const Text(
-                                  '12/26',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -282,32 +266,198 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                       final prefs = await SharedPreferences.getInstance();
                       final customerId = prefs.getInt('customerId') ?? 0;
 
-                      final orderService = OrderService();
-                      final success = await orderService.createOrder(
-                        customerId: customerId,
-                        note:
-                            'Tên: ${nameController.text}, SĐT: ${phoneController.text}, Địa chỉ: ${addressController.text}',
-                        promotionId: 0,
-                        promotionCode: couponController.text.trim(),
-                        cartList: cartList,
-                      );
+                      if (selectedPaymentMethod == 'Thanh toán qua PayPal') {
+                        double totalAmount = cartList.fold(
+                            0, (sum, item) => sum + item.productTotalPrice);
 
-                      if (success) {
-                        Get.offAll(() => MainScreen());
-                        Get.snackbar(
-                          'Thành công',
-                          'Đặt hàng thành công!',
-                          backgroundColor: Colors.green,
-                          colorText: Colors.white,
-                        );
-                        await prefs.remove('cart');
+                        try {
+                          // Step 1: Create Order API Call
+                          final createOrderResponse = await http.post(
+                            Uri.parse('$BASE_URL/api/Order/Create'),
+                            headers: {'Content-Type': 'application/json'},
+                            body: jsonEncode({
+                              "customerId":
+                                  customerId, // Replace with the actual customer ID
+                              "note":
+                                  'Tên: ${nameController.text}, SĐT: ${phoneController.text}, Địa chỉ: ${addressController.text}',
+                              "promotionId":
+                                  0, // Replace with the actual promotion ID if applicable
+                              "promotionCode": couponController.text
+                                  .trim(), // Replace with the actual promotion code if applicable
+                              "cartItems": cartList.map((item) {
+                                return {
+                                  "productId": item.productId,
+                                  "quantity": item.productQuantity,
+                                };
+                              }).toList(),
+                            }),
+                          );
+
+                          if (createOrderResponse.statusCode == 200) {
+                            final createOrderData =
+                                jsonDecode(createOrderResponse.body);
+                            final orderId = createOrderData[
+                                'data']; // Extract orderId from response
+
+                            // Step 2: Navigate to PayPal Checkout
+                            Navigator.of(context).push(MaterialPageRoute(
+                              builder: (BuildContext context) =>
+                                  PaypalCheckoutView(
+                                sandboxMode: true,
+                                clientId:
+                                    "AXAl-vVyydICzwStxvMLyA53LuFjVrRONwiZWU5kLqzjOgQGLuKWJ0ajOlzpmiYLi5ea8QrxZ9PP0TG1",
+                                secretKey:
+                                    "EJT5yyTPgJrsiWJerUbb4BGD2swipXXATg5ui5WAIJN5h-mn1zwqKfNTp28fg9farK7H1aFzsct59_NM",
+                                transactions: [
+                                  {
+                                    "amount": {
+                                      "total": totalAmount.toString(),
+                                      "currency": "USD",
+                                      "details": {
+                                        "subtotal": totalAmount.toString(),
+                                        "shipping": '0',
+                                        "shipping_discount": 0
+                                      }
+                                    },
+                                    "description":
+                                        "The payment transaction description.",
+                                    "item_list": {
+                                      "items": cartList.map((item) {
+                                        return {
+                                          "name": item.productName,
+                                          "quantity": item
+                                              .productQuantity, // Replace with the actual quantity
+                                          "price": totalAmount.toString(),
+                                          "currency": "USD"
+                                        };
+                                      }).toList(),
+                                    }
+                                  }
+                                ],
+                                note:
+                                    "Contact us for any questions on your order.",
+                                onSuccess: (Map params) async {
+                                  try {
+                                    // Step 3: Capture Order API Call
+                                    final captureOrderResponse =
+                                        await http.post(
+                                            Uri.parse(
+                                                '$BASE_URL/api/Order/CaptureOrder?orderId=$orderId'),
+                                            headers: {
+                                              'Content-Type':
+                                                  'application/json'
+                                            });
+
+                                    if (captureOrderResponse.statusCode ==
+                                        200) {
+                                      print(
+                                          "Order captured successfully: ${captureOrderResponse.body}");
+                                      Get.snackbar(
+                                        'Thành công',
+                                        'Thanh toán thành công!',
+                                        backgroundColor: Colors.green,
+                                        colorText: Colors.white,
+                                      );
+                                      // Navigator.pop(context);
+                                      await prefs.remove('cart');
+
+                                      // Điều hướng về MainScreen
+                                      Future.delayed(Duration(seconds: 1), () {
+                                        Get.offAll(() =>
+                                            MainScreen()); // Điều hướng sau khi xử lý xong
+                                      });
+                                    } else {
+                                      print(
+                                          "Failed to capture order: ${captureOrderResponse.body}");
+                                      Get.snackbar(
+                                        'Lỗi',
+                                        'Không thể xác nhận thanh toán!',
+                                        backgroundColor: Colors.red,
+                                        colorText: Colors.white,
+                                      );
+                                    }
+                                  } catch (error) {
+                                    print("Error: $error");
+                                    Get.snackbar(
+                                      'Lỗi',
+                                      'Đã xảy ra lỗi khi xử lý thanh toán!',
+                                      backgroundColor: Colors.red,
+                                      colorText: Colors.white,
+                                    );
+                                  } finally {
+                                    Navigator.pop(context);
+                                  }
+                                },
+                                onError: (error) {
+                                  print("Payment Error: $error");
+                                  Get.snackbar(
+                                    'Lỗi',
+                                    'Thanh toán PayPal thất bại! Vui lòng thử lại.',
+                                    backgroundColor: Colors.red,
+                                    colorText: Colors.white,
+                                  );
+                                  Navigator.pop(context);
+                                },
+                                onCancel: () {
+                                  print("Payment Cancelled");
+                                  Get.snackbar(
+                                    'Hủy bỏ',
+                                    'Bạn đã hủy thanh toán qua PayPal.',
+                                    backgroundColor: Colors.orange,
+                                    colorText: Colors.white,
+                                  );
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            ));
+                          } else {
+                            print(
+                                "Failed to create order: ${createOrderResponse.body}");
+                            Get.snackbar(
+                              'Lỗi',
+                              'Không thể tạo đơn hàng!',
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          }
+                        } catch (error) {
+                          print("Error: $error");
+                          Get.snackbar(
+                            'Lỗi',
+                            'Đã xảy ra lỗi khi tạo đơn hàng!',
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                        }
                       } else {
-                        Get.snackbar(
-                          'Lỗi',
-                          'Đặt hàng thất bại! Vui lòng thử lại.',
-                          backgroundColor: Colors.red,
-                          colorText: Colors.white,
+                        // Handle other payment methods
+                        final orderService = OrderService();
+                        final success = await orderService.createOrder(
+                          customerId: customerId,
+                          note:
+                              'Tên: ${nameController.text}, SĐT: ${phoneController.text}, Địa chỉ: ${addressController.text}',
+                          promotionId: 0,
+                          promotionCode: couponController.text.trim(),
+                          cartList: cartList,
                         );
+
+                        if (success) {
+                          Get.offAll(() => MainScreen());
+                          Get.snackbar(
+                            'Thành công',
+                            'Đặt hàng thành công!',
+                            backgroundColor: Colors.green,
+                            colorText: Colors.white,
+                          );
+                          await prefs.remove('cart');
+                        } else {
+                          Get.snackbar(
+                            'Lỗi',
+                            'Đặt hàng thất bại! Vui lòng thử lại.',
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                        }
                       }
                     } else {
                       Get.snackbar(

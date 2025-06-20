@@ -1,0 +1,2 @@
+C:/Users/Legion/Documents/Zalo Received Files/Sales_MobileApp/Sales_App/android/app/.cxx/Debug/340723r5/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/Legion/Documents/Zalo Received Files/Sales_MobileApp/Sales_App/android/app/.cxx/Debug/340723r5/armeabi-v7a/CMakeFiles/rebuild_cache.dir

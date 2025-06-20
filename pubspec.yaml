@@ -27,15 +27,17 @@ dependencies:
   fluttertoast: ^8.2.8
   get: ^4.7.2
   google_sign_in: ^6.3.0
-  http: ^1.1.0
-  flutter_secure_storage: ^9.0.0 # để lưu token
+  http: ^1.2.1
   image_card: ^0.0.4
+  image_picker: ^1.0.7
   intl: ^0.20.2
   lottie: ^3.3.1
   share_plus: ^11.0.0
   url_launcher: ^6.3.1
   shared_preferences: ^2.2.2
-  dio: ^5.8.0+1
+  flutter_paypal_payment: ^1.0.8
+  app_links: ^6.4.0
+
 
 dev_dependencies:
   flutter_test:

@@ -101,10 +101,17 @@ class ProductService {
     return _repo.fetchProducts();
   }
 
+
   static Future<List<ProductApiModel>> fetchRelatedProducts(
       String categoryName,
       int currentProductId,
       {int limit = 5}) {
     return _repo.fetchRelatedProducts(categoryName, currentProductId, limit: limit);
   }
+
+  static Future<List<ProductApiModel>> fetchProductsByCategory(int categoryId) async {
+    final allProducts = await _repo.fetchProducts();
+    return allProducts.where((p) => p.categoryId == categoryId).toList();
+  }
 }
+

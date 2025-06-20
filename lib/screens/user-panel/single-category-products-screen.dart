@@ -1,23 +1,43 @@
 // ignore_for_file: file_names, prefer_const_constructors, sized_box_for_whitespace, avoid_unnecessary_containers, must_be_immutable
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chichanka_perfume/models/product-model.dart';
+import 'package:chichanka_perfume/models/product_api_model.dart';
 import 'package:chichanka_perfume/screens/user-panel/product-details-screen.dart';
+import 'package:chichanka_perfume/services/product_service.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:chichanka_perfume/models/product-model.dart';
 import 'package:image_card/image_card.dart';
 import 'package:intl/intl.dart';
+import 'package:chichanka_perfume/config.dart';
+
 
 class AllSingleCategoryProductsScreen extends StatelessWidget {
-  final String categoryId;
+  final int categoryId;
 
   const AllSingleCategoryProductsScreen({super.key, required this.categoryId});
 
-  String formatPrice(String price) {
+  String formatPrice(int price) {
     final formatter = NumberFormat('#,###', 'vi_VN');
-    return '${formatter.format(double.parse(price))} đ';
+    return '${formatter.format(price)} đ';
+  }
+
+  ProductModel convertApiToProductModel(ProductApiModel apiModel) {
+    return ProductModel(
+      productId: apiModel.productId.toString(),
+      productName: apiModel.productName,
+      productImages: [apiModel.img ?? ''],
+      fullPrice: apiModel.priceOutput.toString(),
+      salePrice: apiModel.priceOutput.toString(),
+      isSale: false,
+      categoryId: apiModel.categoryId?.toString() ?? '',
+      categoryName: apiModel.categoryName?.toString() ?? '',
+      productDescription: apiModel.description ?? '',
+      deliveryTime: '',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
   }
 
   @override
@@ -31,11 +51,8 @@ class AllSingleCategoryProductsScreen extends StatelessWidget {
           style: TextStyle(color: AppConstant.appTextColor),
         ),
       ),
-      body: FutureBuilder<QuerySnapshot>(
-        future: FirebaseFirestore.instance
-            .collection('products')
-            .where('categoryId', isEqualTo: categoryId)
-            .get(),
+      body: FutureBuilder<List<ProductApiModel>>(
+        future: ProductService.fetchProductsByCategory(categoryId),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return const Center(child: Text('Có lỗi xảy ra'));
@@ -48,7 +65,9 @@ class AllSingleCategoryProductsScreen extends StatelessWidget {
             );
           }
 
-          if (snapshot.data?.docs.isEmpty ?? true) {
+          final products = snapshot.data ?? [];
+
+          if (products.isEmpty) {
             return const Center(child: Text('Không tìm thấy sản phẩm!'));
           }
 
@@ -58,87 +77,74 @@ class AllSingleCategoryProductsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(10.0),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 0.61, // Adjusted to give more vertical space
+              mainAxisSpacing: 15,
+              crossAxisSpacing: 15,
+              childAspectRatio: 0.7,
             ),
-            itemCount: snapshot.data!.docs.length,
+            itemCount: products.length,
             itemBuilder: (context, index) {
-              final productData = snapshot.data!.docs[index];
-              final productModel = ProductModel.fromMap(
-                  productData.data() as Map<String, dynamic>);
+              final product = products[index];
 
               return GestureDetector(
-                onTap: () => Get.to(
-                    () => ProductDetailsScreen(productModel: productModel)),
+                onTap: () {
+                  final productModel = convertApiToProductModel(product);
+                  Get.to(() => ProductDetailsScreen(productModel: productModel));
+                },
                 child: Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey, width: 1.0),
-                    borderRadius: BorderRadius.circular(10.0),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 6,
+                        offset: Offset(0, 3),
+                      )
+                    ],
                   ),
-                  clipBehavior: Clip.hardEdge,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: FillImageCard(
-                          borderRadius: 10.0,
-                          width: double.infinity,
-                          heightImage: Get.height * 0.21,
-                          imageProvider: CachedNetworkImageProvider(
-                            productModel.productImages[0],
+                      ClipRRect(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                        child: AspectRatio(
+                          aspectRatio: 1,
+                          child: CachedNetworkImage(
+                            imageUrl: product.img.startsWith('http')
+                                ? product.img
+                                : '$BASE_URL/${product.img}',
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) =>
+                                Center(child: CircularProgressIndicator()),
+                            errorWidget: (context, url, error) =>
+                                Icon(Icons.error, color: Colors.red),
                           ),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.only(
-                            top: 2.0, bottom: 5.5, left: 8.0, right: 8.0),
-                        color: Colors.white,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
                         child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
-                              productModel.productName,
-                              textAlign: TextAlign.center,
-                              overflow: TextOverflow.ellipsis,
+                              product.productName,
                               maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
                               style: const TextStyle(
-                                fontSize: 13.0,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
                               ),
                             ),
-                            const SizedBox(height: 5),
-                            if (productModel.isSale) ...[
-                              Text(
-                                formatPrice(productModel.fullPrice),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  decoration: TextDecoration.lineThrough,
-                                  fontSize: 12,
-                                ),
+                            SizedBox(height: 6),
+                            Text(
+                              formatPrice(product.priceOutput),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Colors.red,
                               ),
-                              Text(
-                                formatPrice(productModel.salePrice),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ] else ...[
-                              Text(
-                                formatPrice(productModel.fullPrice),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
+                            ),
                           ],
                         ),
                       ),
@@ -153,6 +159,7 @@ class AllSingleCategoryProductsScreen extends StatelessWidget {
     );
   }
 }
+
 
 extension ProductModelExtension on ProductModel {
   static ProductModel fromMap(Map<String, dynamic> data) {
@@ -175,3 +182,4 @@ extension ProductModelExtension on ProductModel {
     );
   }
 }
+

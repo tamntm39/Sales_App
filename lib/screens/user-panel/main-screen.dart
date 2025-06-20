@@ -200,7 +200,7 @@ class _MainScreenState extends State<MainScreen>
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
               child: TextField(
                 decoration: InputDecoration(
-                  hintText: 'Tìm kiếm nước hoa...',
+                  hintText: 'Tìm kiếm sản phẩm...',
                   prefixIcon: Icon(Icons.search, color: AppConstant.navy),
                   filled: true,
                   fillColor: Colors.white,
