@@ -159,3 +159,27 @@ class AllSingleCategoryProductsScreen extends StatelessWidget {
     );
   }
 }
+
+
+extension ProductModelExtension on ProductModel {
+  static ProductModel fromMap(Map<String, dynamic> data) {
+
+    
+    
+    return ProductModel(
+      productId: data['productId'],
+      categoryId: data['categoryId'],
+      productName: data['productName'],
+      categoryName: data['categoryName'],
+      salePrice: data['salePrice'],
+      fullPrice: data['fullPrice'],
+      productImages: data['productImages'] ?? '',
+      deliveryTime: data['deliveryTime'],
+      isSale: data['isSale'],
+      productDescription: data['productDescription'],
+      createdAt: data['createdAt'],
+      updatedAt: data['updatedAt'],
+    );
+  }
+}
+

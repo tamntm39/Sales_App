@@ -144,6 +144,18 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
   }
 }
 ProductModel convertApiToProductModel(ProductApiModel apiModel) {
+
+   String normalize(String? p) => p?.replaceAll(r'\', '/') ?? '';
+
+  final rawImg  = normalize(apiModel.img);
+  final rawImg2 = normalize(apiModel.img2);
+  final rawImg3 = normalize(apiModel.img3);
+
+  // Gom list ảnh cho carousel
+  final images = <String>[];
+  if (rawImg .isNotEmpty) images.add(rawImg);
+  if (rawImg2.isNotEmpty) images.add(rawImg2);
+  if (rawImg3.isNotEmpty) images.add(rawImg3);
   return ProductModel(
     productId: apiModel.productId.toString(), // ép kiểu về String
     productName: apiModel.productName,
