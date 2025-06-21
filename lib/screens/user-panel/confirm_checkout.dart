@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:chichanka_perfume/controllers/cart-price-controller.dart';
 import 'package:chichanka_perfume/models/cart-model.dart';
 import 'package:chichanka_perfume/services/order_service.dart';
+import 'package:chichanka_perfume/services/ghn_service.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -12,7 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:app_links/app_links.dart';
 import 'package:chichanka_perfume/config.dart';
-
+import 'package:chichanka_perfume/models/address_model.dart';
 import 'package:flutter_paypal_payment/flutter_paypal_payment.dart';
 
 void showCustomBottomSheet(List<CartModel> cartList) {
@@ -20,20 +21,80 @@ void showCustomBottomSheet(List<CartModel> cartList) {
   String selectedPaymentMethod = 'Thanh toán khi nhận hàng';
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  final TextEditingController addressController = TextEditingController();
+  final TextEditingController detailAddressController = TextEditingController();
   final NumberFormat _currencyFormat = NumberFormat('#,##0', 'vi_VN');
   double discount = 0.0;
+
+  // Biến trạng thái cho địa chỉ GHN
+  Province? selectedProvince;
+  District? selectedDistrict;
+  Ward? selectedWard;
+  List<Province> provinces = [];
+  List<District> districts = [];
+  List<Ward> wards = [];
+
+  // Biến trạng thái phí vận chuyển
+  int? shippingFee;
+  bool isCalculatingShipping = false;
 
   // Thêm biến trạng thái để kiểm soát hiệu ứng tải QR
   bool _isLoadingQr = false;
 
+  Future<void> loadProvinces(StateSetter setState) async {
+    provinces = await GhnService.fetchProvinces();
+    if (provinces.isNotEmpty) {
+      selectedProvince = provinces.first;
+      districts = await GhnService.fetchDistricts(selectedProvince!.id);
+      if (districts.isNotEmpty) {
+        selectedDistrict = districts.first;
+        wards = await GhnService.fetchWards(selectedDistrict!.id);
+        if (wards.isNotEmpty) {
+          selectedWard = wards.first;
+        }
+      }
+    }
+    setState(() {});
+  }
+
+  Future<void> calculateShipping(StateSetter setState) async {
+    if (selectedDistrict != null && selectedWard != null) {
+      setState(() {
+        isCalculatingShipping = true;
+      });
+      try {
+        // fromDistrictId: ID quận/huyện của shop bạn trên GHN (ví dụ: 1450 là Quận 1, HCM)
+        shippingFee = await GhnService.calculateShippingFee(
+          fromDistrictId: 1454, // Thay bằng ID thực tế của shop bạn
+          toDistrictId: selectedDistrict!.id,
+          toWardCode: selectedWard!.code,
+          weight: 2000, // gram
+          length: 50, // cm
+          width: 50, // cm
+          height: 100, // cm
+        );
+      } catch (e) {
+        shippingFee = null;
+        Get.snackbar('Lỗi', 'Không thể tính phí vận chuyển');
+      }
+      setState(() {
+        isCalculatingShipping = false;
+      });
+    }
+  }
+
   Get.bottomSheet(
     StatefulBuilder(
       builder: (BuildContext context, StateSetter setState) {
+        // Tải dữ liệu tỉnh/thành khi mở sheet lần đầu
+        if (provinces.isEmpty) {
+          loadProvinces(setState);
+          return const Center(child: CircularProgressIndicator());
+        }
+
         // Tính tổng tiền từ cartList
         double total = cartList.fold(
             0, (sum, item) => sum + (item.productTotalPrice ?? 0));
-        double finalPrice = total - discount;
+        double finalPrice = total - discount + (shippingFee ?? 0);
 
         return Container(
           padding: const EdgeInsets.all(20),
@@ -68,10 +129,99 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 16),
+                // Địa chỉ GHN
+                DropdownButtonFormField<Province>(
+                  value: selectedProvince,
+                  items: provinces
+                      .map((p) => DropdownMenuItem(
+                            value: p,
+                            child: Text(p.name),
+                          ))
+                      .toList(),
+                  onChanged: (Province? value) async {
+                    setState(() {
+                      selectedProvince = value;
+                      selectedDistrict = null;
+                      selectedWard = null;
+                      districts = [];
+                      wards = [];
+                      shippingFee = null;
+                    });
+                    if (value != null) {
+                      districts = await GhnService.fetchDistricts(value.id);
+                      setState(() {
+                        if (districts.isNotEmpty)
+                          selectedDistrict = districts.first;
+                      });
+                      if (districts.isNotEmpty) {
+                        wards = await GhnService.fetchWards(districts.first.id);
+                        setState(() {
+                          if (wards.isNotEmpty) selectedWard = wards.first;
+                        });
+                        await calculateShipping(setState);
+                      }
+                    }
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Tỉnh/Thành phố',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<District>(
+                  value: selectedDistrict,
+                  items: districts
+                      .map((d) => DropdownMenuItem(
+                            value: d,
+                            child: Text(d.name),
+                          ))
+                      .toList(),
+                  onChanged: (District? value) async {
+                    setState(() {
+                      selectedDistrict = value;
+                      selectedWard = null;
+                      wards = [];
+                      shippingFee = null;
+                    });
+                    if (value != null) {
+                      wards = await GhnService.fetchWards(value.id);
+                      setState(() {
+                        if (wards.isNotEmpty) selectedWard = wards.first;
+                      });
+                      await calculateShipping(setState);
+                    }
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Quận/Huyện',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<Ward>(
+                  value: selectedWard,
+                  items: wards
+                      .map((w) => DropdownMenuItem(
+                            value: w,
+                            child: Text(w.name),
+                          ))
+                      .toList(),
+                  onChanged: (Ward? value) async {
+                    setState(() {
+                      selectedWard = value;
+                      shippingFee = null;
+                    });
+                    await calculateShipping(setState);
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Phường/Xã',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 _buildTextField(
-                  controller: addressController,
-                  label: 'Địa chỉ giao hàng',
-                  icon: Icons.location_on,
+                  controller: detailAddressController,
+                  label: 'Số nhà, tên đường (bắt buộc)',
+                  icon: Icons.home,
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -81,14 +231,22 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                       'Phí vận chuyển:',
                       style: TextStyle(fontSize: 16),
                     ),
-                    Text(
-                      'Miễn phí',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppConstant.appMainColor,
-                      ),
-                    ),
+                    isCalculatingShipping
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(
+                            shippingFee != null
+                                ? '${_currencyFormat.format(shippingFee)} đ'
+                                : 'Chọn địa chỉ',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppConstant.appMainColor,
+                            ),
+                          ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -101,7 +259,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                   isExpanded: true,
                   items: <String>[
                     'Thanh toán khi nhận hàng',
-                    'Thanh toán mã QR', // Đã đổi tên
+                    'Thanh toán mã QR',
                     'Thanh toán qua PayPal'
                   ].map((String value) {
                     return DropdownMenuItem<String>(
@@ -112,19 +270,17 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                   onChanged: (String? newValue) {
                     setState(() {
                       selectedPaymentMethod = newValue!;
-                      // Nếu chọn "Thanh toán mã QR", bắt đầu hiệu ứng tải
                       if (newValue == 'Thanh toán mã QR') {
                         _isLoadingQr = true;
-                        // Giả lập độ trễ 2 giây
                         Future.delayed(const Duration(seconds: 2), () {
-                          if (context.mounted) { // Đảm bảo widget vẫn còn tồn tại trước khi gọi setState
+                          if (context.mounted) {
                             setState(() {
                               _isLoadingQr = false;
                             });
                           }
                         });
                       } else {
-                        _isLoadingQr = false; // Reset nếu chọn phương thức khác
+                        _isLoadingQr = false;
                       }
                     });
                   },
@@ -156,19 +312,19 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                           ],
                         ),
                         padding: const EdgeInsets.all(16),
-                        child: AnimatedSwitcher( // Sử dụng AnimatedSwitcher để chuyển đổi mượt mà
+                        child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 500),
                           child: _isLoadingQr
                               ? Center(
-                                  key: const ValueKey('loading'), // Key cho AnimatedSwitcher
+                                  key: const ValueKey('loading'),
                                   child: CircularProgressIndicator(
                                     color: AppConstant.appMainColor,
                                   ),
                                 )
                               : Center(
-                                  key: const ValueKey('qr_code'), // Key cho AnimatedSwitcher
+                                  key: const ValueKey('qr_code'),
                                   child: Image.network(
-                                    'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=randomstringforqr', // Một URL tạo QR code ngẫu nhiên
+                                    'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=randomstringforqr',
                                     fit: BoxFit.contain,
                                   ),
                                 ),
@@ -262,9 +418,15 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                   onPressed: () async {
                     if (nameController.text.isNotEmpty &&
                         phoneController.text.isNotEmpty &&
-                        addressController.text.isNotEmpty) {
+                        detailAddressController.text.isNotEmpty &&
+                        selectedProvince != null &&
+                        selectedDistrict != null &&
+                        selectedWard != null) {
                       final prefs = await SharedPreferences.getInstance();
                       final customerId = prefs.getInt('customerId') ?? 0;
+
+                      final fullAddress =
+                          '${detailAddressController.text}, ${selectedWard!.name}, ${selectedDistrict!.name}, ${selectedProvince!.name}';
 
                       if (selectedPaymentMethod == 'Thanh toán qua PayPal') {
                         double totalAmount = cartList.fold(
@@ -276,14 +438,11 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                             Uri.parse('$BASE_URL/api/Order/Create'),
                             headers: {'Content-Type': 'application/json'},
                             body: jsonEncode({
-                              "customerId":
-                                  customerId, // Replace with the actual customer ID
+                              "customerId": customerId,
                               "note":
-                                  'Tên: ${nameController.text}, SĐT: ${phoneController.text}, Địa chỉ: ${addressController.text}',
-                              "promotionId":
-                                  0, // Replace with the actual promotion ID if applicable
-                              "promotionCode": couponController.text
-                                  .trim(), // Replace with the actual promotion code if applicable
+                                  'Tên: ${nameController.text}, SĐT: ${phoneController.text}, Địa chỉ: $fullAddress',
+                              "promotionId": 0,
+                              "promotionCode": couponController.text.trim(),
                               "cartItems": cartList.map((item) {
                                 return {
                                   "productId": item.productId,
@@ -296,8 +455,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                           if (createOrderResponse.statusCode == 200) {
                             final createOrderData =
                                 jsonDecode(createOrderResponse.body);
-                            final orderId = createOrderData[
-                                'data']; // Extract orderId from response
+                            final orderId = createOrderData['data'];
 
                             // Step 2: Navigate to PayPal Checkout
                             Navigator.of(context).push(MaterialPageRoute(
@@ -325,8 +483,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                                       "items": cartList.map((item) {
                                         return {
                                           "name": item.productName,
-                                          "quantity": item
-                                              .productQuantity, // Replace with the actual quantity
+                                          "quantity": item.productQuantity,
                                           "price": totalAmount.toString(),
                                           "currency": "USD"
                                         };
@@ -339,14 +496,12 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                                 onSuccess: (Map params) async {
                                   try {
                                     // Step 3: Capture Order API Call
-                                    final captureOrderResponse =
-                                        await http.post(
-                                            Uri.parse(
-                                                '$BASE_URL/api/Order/CaptureOrder?orderId=$orderId'),
-                                            headers: {
-                                              'Content-Type':
-                                                  'application/json'
-                                            });
+                                    final captureOrderResponse = await http.post(
+                                        Uri.parse(
+                                            '$BASE_URL/api/Order/CaptureOrder?orderId=$orderId'),
+                                        headers: {
+                                          'Content-Type': 'application/json'
+                                        });
 
                                     if (captureOrderResponse.statusCode ==
                                         200) {
@@ -358,13 +513,9 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                                         backgroundColor: Colors.green,
                                         colorText: Colors.white,
                                       );
-                                      // Navigator.pop(context);
                                       await prefs.remove('cart');
-
-                                      // Điều hướng về MainScreen
                                       Future.delayed(Duration(seconds: 1), () {
-                                        Get.offAll(() =>
-                                            MainScreen()); // Điều hướng sau khi xử lý xong
+                                        Get.offAll(() => MainScreen());
                                       });
                                     } else {
                                       print(
@@ -435,7 +586,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                         final success = await orderService.createOrder(
                           customerId: customerId,
                           note:
-                              'Tên: ${nameController.text}, SĐT: ${phoneController.text}, Địa chỉ: ${addressController.text}',
+                              'Tên: ${nameController.text}, SĐT: ${phoneController.text}, Địa chỉ: $fullAddress',
                           promotionId: 0,
                           promotionCode: couponController.text.trim(),
                           cartList: cartList,
