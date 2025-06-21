@@ -156,19 +156,19 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                           ],
                         ),
                         padding: const EdgeInsets.all(16),
-                        child: AnimatedSwitcher( // Sử dụng AnimatedSwitcher để chuyển đổi mượt mà
+                        child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 500),
                           child: _isLoadingQr
                               ? Center(
-                                  key: const ValueKey('loading'), // Key cho AnimatedSwitcher
+                                  key: const ValueKey('loading'),
                                   child: CircularProgressIndicator(
                                     color: AppConstant.appMainColor,
                                   ),
                                 )
                               : Center(
-                                  key: const ValueKey('qr_code'), // Key cho AnimatedSwitcher
-                                  child: Image.network(
-                                    'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=randomstringforqr', // Một URL tạo QR code ngẫu nhiên
+                                  key: const ValueKey('qr_code'),
+                                  child: Image.asset(
+                                    'assets/images/maqr.jpg',
                                     fit: BoxFit.contain,
                                   ),
                                 ),
