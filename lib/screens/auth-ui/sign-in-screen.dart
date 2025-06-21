@@ -230,10 +230,9 @@ class _SigninScreenState extends State<SignInScreen> {
         ),
         child: TextButton(
           onPressed: () async {
-            // String email = userEmail.text.trim();
-            // String password = userPassword.text.trim();
-            String email = "pbk250904@gmail.com";
-            String password = "123456";
+            String email = userEmail.text.trim();
+            String password = userPassword.text.trim();
+        
 
             if (email.isEmpty || password.isEmpty) {
               Get.snackbar(

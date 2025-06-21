@@ -197,7 +197,10 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                                     final productModel =
                                         convertApiToProductModel(product);
                                     Get.to(() => ProductDetailsScreen(
-                                        productModel: productModel));
+                                        productModel: productModel,
+                                        productApiModel: product,
+                                       allProducts: products
+                                        ));
                                   },
                                   child: Column(
                                     crossAxisAlignment:

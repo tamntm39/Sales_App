@@ -9,7 +9,6 @@ import 'package:image_card/image_card.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import '../../config.dart';
-
 import 'package:http/http.dart' as http;
 
 String getImageUrl(String img) {
@@ -22,14 +21,13 @@ class FlashSaleWidget extends StatelessWidget {
 
   Future<List<SaleOffProduct>> fetchFlashSaleProducts() async {
     final response = await http.get(
-      Uri.parse(
-          '$BASE_URL/api/Product/GetSaleOffProducts'), // Đổi IP theo backend của bạn
+      Uri.parse('$BASE_URL/api/Product/GetSaleOffProducts'),
     );
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);
       if (jsonData['success'] == true && jsonData['data'] != null) {
         return (jsonData['data'] as List)
-            .take(4) // Lấy tối đa 4 sản phẩm cho flash sale trang chủ
+            .take(4)
             .map((item) => SaleOffProduct.fromJson(item))
             .toList();
       }
@@ -37,7 +35,6 @@ class FlashSaleWidget extends StatelessWidget {
     return [];
   }
 
-  // Hàm chuyển SaleOffProduct sang ProductModel để không ảnh hưởng chức năng khác
   ProductModel convertToProductModel(SaleOffProduct saleProduct) {
     return ProductModel(
       productId: saleProduct.productId.toString(),
@@ -73,6 +70,7 @@ class FlashSaleWidget extends StatelessWidget {
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(child: Text("Không tìm thấy sản phẩm!"));
         }
+
         final products = snapshot.data!;
         return SizedBox(
           height: Get.height / 4.5,
@@ -84,16 +82,13 @@ class FlashSaleWidget extends StatelessWidget {
             itemBuilder: (context, index) {
               final saleProduct = products[index];
               final productModel = convertToProductModel(saleProduct);
+
               return GestureDetector(
-                onTap: () => Get.to(
-                  () => ProductDetailsScreen(productModel: productModel),
-                ),
+                onTap: () => Get.to(() => ProductDetailsScreen(productModel: productModel)),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 5.0),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: Get.width / 4,
-                    ),
+                    constraints: BoxConstraints(maxWidth: Get.width / 4),
                     child: FillImageCard(
                       borderRadius: 10.0,
                       width: Get.width / 4,

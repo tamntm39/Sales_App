@@ -59,6 +59,18 @@ class _MainScreenState extends State<MainScreen>
     fetchProducts();
   }
 
+  List<ProductApiModel> getRelatedProducts(String categoryName, int productId) {
+  return allProducts
+      .where((p) =>
+          p.categoryName.trim().toLowerCase() ==
+              categoryName.trim().toLowerCase() &&
+          p.productId != productId)
+      .take(5)
+      .toList();
+}
+
+
+
   Future<void> fetchProducts() async {
     setState(() {
       isLoadingProducts = true;
@@ -77,6 +89,7 @@ class _MainScreenState extends State<MainScreen>
       });
     }
   }
+
 
   void addToRecentlyViewed(ProductApiModel product) {
     setState(() {
@@ -408,7 +421,9 @@ class _MainScreenState extends State<MainScreen>
                           AllProductsWidget(
                             addToRecentlyViewed: addToRecentlyViewed,
                             products: allProducts,
+                            allProducts: allProducts,
                           ),
+                        
                         ],
                       ),
                     ),
@@ -592,10 +607,11 @@ class _MainScreenState extends State<MainScreen>
 class AllProductsWidget extends StatelessWidget {
   final Function(ProductApiModel) addToRecentlyViewed;
   final List<ProductApiModel> products;
-
+  final List<ProductApiModel> allProducts;
   const AllProductsWidget({
     required this.addToRecentlyViewed,
     required this.products,
+     required this.allProducts,
   });
 
   @override
@@ -618,7 +634,7 @@ class AllProductsWidget extends StatelessWidget {
           return GestureDetector(
             onTap: () {
               final productModel = convertApiToProductModel(product);
-              Get.to(() => ProductDetailsScreen(productModel: productModel));
+              Get.to(() => ProductDetailsScreen(productModel: productModel,productApiModel: product, allProducts: allProducts,));
             },
             child: Container(
               width: 150,
@@ -807,3 +823,5 @@ class BottomNavPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
+
+
