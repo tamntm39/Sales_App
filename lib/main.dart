@@ -2,6 +2,8 @@ import 'package:chichanka_perfume/firebase_options.dart';
 import 'package:chichanka_perfume/screens/auth-ui/splash-screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 
@@ -31,6 +33,9 @@ class MyApp extends StatelessWidget {
       ),
       home: const SplashScreen(),
       builder: EasyLoading.init(),
+      getPages: [
+        GetPage(name: '/home', page: () => const MainScreen()), // Đã fix
+      ],
     );
   }
 }

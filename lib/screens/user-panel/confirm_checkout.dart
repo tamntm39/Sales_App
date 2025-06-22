@@ -323,8 +323,8 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                                 )
                               : Center(
                                   key: const ValueKey('qr_code'),
-                                  child: Image.network(
-                                    'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=randomstringforqr',
+                                  child: Image.asset(
+                                    'assets/images/maqr.jpg',
                                     fit: BoxFit.contain,
                                   ),
                                 ),

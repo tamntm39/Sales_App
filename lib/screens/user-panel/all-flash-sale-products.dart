@@ -213,3 +213,23 @@ class AllFlashSaleProductScreen extends StatelessWidget {
     );
   }
 }
+
+// Giả định ProductModel có phương thức fromMap
+extension ProductModelExtension on ProductModel {
+  static ProductModel fromMap(Map<String, dynamic> data) {
+    return ProductModel(
+      productId: data['productId'],
+      categoryId: data['categoryId'],
+      productName: data['productName'],
+      categoryName: data['categoryName'],
+      salePrice: data['salePrice'],
+      fullPrice: data['fullPrice'],
+      productImages: List<String>.from(data['productImages']),
+      deliveryTime: data['deliveryTime'],
+      isSale: data['isSale'],
+      productDescription: data['productDescription'],
+      createdAt: data['createdAt'],
+      updatedAt: data['updatedAt'],
+    );
+  }
+}
