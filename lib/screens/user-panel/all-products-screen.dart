@@ -112,11 +112,11 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppConstant.navy,
-        iconTheme: IconThemeData(color: AppConstant.appTextColor),
+        backgroundColor: Colors.green.shade700,
+        iconTheme: IconThemeData(color: Colors.white),
         title: Text(
           'Tất cả sản phẩm',
-          style: TextStyle(color: AppConstant.appTextColor),
+          style: TextStyle(color: Colors.white),
         ),
       ),
       body: isLoading
@@ -192,15 +192,13 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: InkWell(
-                                  // ...existing code...
                                   onTap: () {
                                     final productModel =
                                         convertApiToProductModel(product);
                                     Get.to(() => ProductDetailsScreen(
                                         productModel: productModel,
                                         productApiModel: product,
-                                       allProducts: products
-                                        ));
+                                        allProducts: products));
                                   },
                                   child: Column(
                                     crossAxisAlignment:
@@ -233,23 +231,43 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              product.productName,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
-                                              ),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.local_florist,
+                                                    color: Colors.green,
+                                                    size: 16),
+                                                const SizedBox(width: 4),
+                                                Expanded(
+                                                  child: Text(
+                                                    'Tên: ${product.productName}',
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                             const SizedBox(height: 4),
-                                            Text(
-                                              '${currencyFormat.format(product.priceOutput)} đ',
-                                              style: const TextStyle(
-                                                color: Colors.red,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 13,
-                                              ),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.attach_money,
+                                                    color: Colors.green,
+                                                    size: 16),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'Giá: ${currencyFormat.format(product.priceOutput)} đ',
+                                                  style: const TextStyle(
+                                                    color: Colors.red,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
@@ -295,7 +313,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                         ),
                       ],
                     ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: SizedBox(
         height: 70,
         child: Stack(
           children: [
@@ -370,11 +388,21 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
             height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isSelected ? AppConstant.navy : Colors.transparent,
+              color: isSelected
+                  ? Colors.green.shade800 // Nền xanh đậm khi selected
+                  : Colors.white, // Nền trắng khi không selected
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 4,
+                ),
+              ],
             ),
             child: Icon(
               icon,
-              color: isSelected ? Colors.white : Colors.grey,
+              color: isSelected
+                  ? Colors.white // Icon trắng khi selected
+                  : Colors.green.shade800, // Icon xanh đậm khi không selected
               size: 24,
             ),
           ),
@@ -382,7 +410,10 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
           Text(
             label,
             style: TextStyle(
-              color: isSelected ? AppConstant.navy : Colors.grey,
+              fontWeight: FontWeight.w500,
+              color: isSelected
+                  ? Colors.green.shade800 // Chữ xanh đậm
+                  : Colors.green.shade700.withOpacity(0.6), // Chữ nhạt
               fontSize: 12,
             ),
           ),
@@ -399,62 +430,32 @@ class BottomNavPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..color = Colors.white
+    final paint = Paint()
+      ..color = Colors.white // Màu nền nav bar
       ..style = PaintingStyle.fill;
 
-    Path path = Path();
-    double width = size.width;
-    double height = size.height;
-    double itemWidth = width / 3;
-    double circleRadius = 30;
-    double circleCenterX = itemWidth * selectedIndex + itemWidth / 2;
-
-    path.moveTo(0, 0);
-    path.lineTo(circleCenterX - circleRadius, 0);
-
-    path.quadraticBezierTo(
-      circleCenterX - circleRadius / 2,
-      0,
-      circleCenterX - circleRadius / 2,
-      circleRadius / 2,
-    );
-    path.quadraticBezierTo(
-      circleCenterX,
-      circleRadius * 1.5,
-      circleCenterX + circleRadius / 2,
-      circleRadius / 2,
-    );
-    path.quadraticBezierTo(
-      circleCenterX + circleRadius / 2,
-      0,
-      circleCenterX + circleRadius,
-      0,
-    );
-
-    path.lineTo(width, 0);
-    path.lineTo(width, height);
-    path.lineTo(0, height);
-    path.close();
+    final path = Path()
+      ..addRect(
+          Rect.fromLTWH(0, 0, size.width, size.height)); // Vẽ hình chữ nhật
 
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 ProductModel convertApiToProductModel(ProductApiModel apiModel) {
   return ProductModel(
-    productId: apiModel.productId.toString(), // ép kiểu về String
+    productId: apiModel.productId.toString(),
     productName: apiModel.productName,
     productImages: [apiModel.img ?? ''],
     fullPrice: apiModel.priceOutput.toString(),
     salePrice: apiModel.priceOutput.toString(),
     isSale: false,
-    categoryId: apiModel.categoryId?.toString() ?? '',
-    categoryName: apiModel.categoryName?.toString() ?? '',
-    productDescription: apiModel.description ?? '', // dùng đúng tên trường
+    categoryId: apiModel.categoryId.toString() ?? '',
+    categoryName: apiModel.categoryName.toString() ?? '',
+    productDescription: apiModel.description ?? '',
     deliveryTime: '',
     createdAt: DateTime.now(),
     updatedAt: DateTime.now(),

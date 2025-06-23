@@ -24,7 +24,7 @@ import 'package:image_card/image_card.dart';
 import 'package:intl/intl.dart';
 import 'package:chichanka_perfume/models/product_api_model.dart';
 import 'package:chichanka_perfume/services/product_service.dart';
-import '../../config.dart'; 
+import '../../config.dart';
 import 'package:chichanka_perfume/screens/user-panel/ai-chat-screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -46,6 +46,12 @@ class _MainScreenState extends State<MainScreen>
   bool isLoadingProducts = false;
   String productLoadError = '';
 
+  // Màu chủ đạo xanh lá cho app cây cảnh
+  final Color primaryGreen = const Color(0xFF2E7D4B);
+  final Color lightGreen = const Color(0xFF4CAF50);
+  final Color darkGreen = const Color(0xFF1B5E20);
+  final Color accentGreen = const Color(0xFF66BB6A);
+
   @override
   void initState() {
     super.initState();
@@ -60,16 +66,14 @@ class _MainScreenState extends State<MainScreen>
   }
 
   List<ProductApiModel> getRelatedProducts(String categoryName, int productId) {
-  return allProducts
-      .where((p) =>
-          p.categoryName.trim().toLowerCase() ==
-              categoryName.trim().toLowerCase() &&
-          p.productId != productId)
-      .take(5)
-      .toList();
-}
-
-
+    return allProducts
+        .where((p) =>
+            p.categoryName.trim().toLowerCase() ==
+                categoryName.trim().toLowerCase() &&
+            p.productId != productId)
+        .take(5)
+        .toList();
+  }
 
   Future<void> fetchProducts() async {
     setState(() {
@@ -89,7 +93,6 @@ class _MainScreenState extends State<MainScreen>
       });
     }
   }
-
 
   void addToRecentlyViewed(ProductApiModel product) {
     setState(() {
@@ -121,25 +124,44 @@ class _MainScreenState extends State<MainScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF1F8E9), // Màu nền xanh nhạt
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
           decoration: BoxDecoration(
-            color: AppConstant.navy,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [primaryGreen, lightGreen],
+            ),
           ),
         ),
-        iconTheme: IconThemeData(color: AppConstant.appTextColor),
-        systemOverlayStyle: SystemUiOverlayStyle(
+        iconTheme: const IconThemeData(color: Colors.white),
+        systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
         ),
         title: Padding(
           padding: const EdgeInsets.only(top: 20.0),
-          child: Image.asset(
-            'assets/images/chichanka_logo.png',
-            height: 100,
-            fit: BoxFit.contain,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.eco,
+                color: Colors.white,
+                size: 32,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Lala Garden',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ),
         centerTitle: true,
@@ -270,7 +292,7 @@ class _MainScreenState extends State<MainScreen>
                             width: double.infinity,
                             heightImage: Get.height / 5,
                             imageProvider: CachedNetworkImageProvider(
-                              '$BASE_URL/' + productModel.img,
+                              '$BASE_URL/${productModel.img}',
                             ),
                             title: Center(
                               child: Text(
@@ -339,13 +361,14 @@ class _MainScreenState extends State<MainScreen>
                     margin: EdgeInsets.symmetric(horizontal: 9),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      color: Colors.white,
+                      color: Colors.green.shade100,
                     ),
                     child: Column(
                       children: [
                         HeadingWidget(
-                          headingTitle: "Phân loại",
-                          headingSubTitle: "Danh mục nổi bật",
+                          icon: Icons.eco,
+                          headingTitle: "Phân loại cây",
+                          headingSubTitle: "Các loại cây cảnh nổi bật",
                           onTap: () => Get.to(() => AllCategoriesScreen()),
                           buttonText: "Xem thêm >",
                         ),
@@ -353,19 +376,23 @@ class _MainScreenState extends State<MainScreen>
                       ],
                     ),
                   ),
+
+                  SizedBox(height: 16), // 👈 thêm khoảng cách dọc
+
                   AnimatedContainer(
                     duration: Duration(milliseconds: 500),
                     curve: Curves.easeInOut,
                     margin: EdgeInsets.symmetric(horizontal: 9),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      color: Colors.white,
+                      color: Colors.green.shade100,
                     ),
                     child: Column(
                       children: [
                         HeadingWidget(
-                          headingTitle: "Thương hiệu",
-                          headingSubTitle: "Các thương hiệu nước hoa tiêu biểu",
+                          icon: Icons.nature_people,
+                          headingTitle: "Thương hiệu cây",
+                          headingSubTitle: "Nhà vườn và nhà cung cấp uy tín",
                           onTap: () => Get.to(() => AllBrandsScreen()),
                           buttonText: "Xem thêm >",
                         ),
@@ -373,6 +400,9 @@ class _MainScreenState extends State<MainScreen>
                       ],
                     ),
                   ),
+
+                  SizedBox(height: 16),
+
                   AnimatedContainer(
                     duration: Duration(milliseconds: 500),
                     curve: Curves.easeInOut,
@@ -382,16 +412,17 @@ class _MainScreenState extends State<MainScreen>
                       borderRadius: BorderRadius.circular(16),
                       gradient: LinearGradient(
                         colors: [
-                          AppConstant.navy.withValues(alpha: 1.0),
-                          Colors.white,
+                          Colors.green.shade200,
+                          Colors.green.shade100,
                         ],
                       ),
                     ),
                     child: Column(
                       children: [
                         HeadingWidget(
-                          headingTitle: "Flash Sale",
-                          headingSubTitle: "Sale sốc - Ưu đãi hàng ngày",
+                          icon: Icons.local_florist,
+                          headingTitle: "Flash Sale cây",
+                          headingSubTitle: "Ưu đãi đặc biệt mỗi ngày",
                           onTap: () =>
                               Get.to(() => AllFlashSaleProductScreen()),
                           buttonText: "Xem thêm >",
@@ -400,21 +431,25 @@ class _MainScreenState extends State<MainScreen>
                       ],
                     ),
                   ),
-                  SizedBox(height: Get.height / 40),
+
+                  SizedBox(height: 16),
+
                   AnimatedContainer(
                     duration: Duration(milliseconds: 500),
                     curve: Curves.easeInOut,
                     margin: EdgeInsets.symmetric(horizontal: 9),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      color: Colors.white,
+                      color: Colors.green.shade100,
                     ),
                     child: SingleChildScrollView(
                       child: Column(
                         children: [
                           HeadingWidget(
-                            headingTitle: "Tất cả sản phẩm",
-                            headingSubTitle: "Đa dạng các nhãn hàng nước hoa",
+                            icon: Icons.park,
+                            headingTitle: "Tất cả cây cảnh",
+                            headingSubTitle:
+                                "Đa dạng chủng loại, nhiều kích cỡ",
                             onTap: () => Get.to(() => AllProductsScreen()),
                             buttonText: "Xem thêm >",
                           ),
@@ -423,12 +458,13 @@ class _MainScreenState extends State<MainScreen>
                             products: allProducts,
                             allProducts: allProducts,
                           ),
-                        
                         ],
                       ),
                     ),
                   ),
-                  SizedBox(height: Get.height / 40),
+
+                  SizedBox(height: 16),
+
                   if (recentlyViewedProducts.isNotEmpty)
                     AnimatedContainer(
                       duration: Duration(milliseconds: 500),
@@ -448,7 +484,8 @@ class _MainScreenState extends State<MainScreen>
                               buttonText: "Xem thêm >",
                             ),
                             RecentProductsWidget(
-                                recentlyViewedProducts: recentlyViewedProducts),
+                              recentlyViewedProducts: recentlyViewedProducts,
+                            ),
                           ],
                         ),
                       ),
@@ -458,7 +495,7 @@ class _MainScreenState extends State<MainScreen>
           ],
         ),
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: SizedBox(
         height: 70,
         child: Stack(
           children: [
@@ -515,7 +552,6 @@ class _MainScreenState extends State<MainScreen>
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.smart_toy),
         backgroundColor: Colors.green,
         onPressed: () {
           // Mở màn hình Chat AI
@@ -525,6 +561,7 @@ class _MainScreenState extends State<MainScreen>
           // Nếu dùng GetX:
           // Get.to(() => const AiChatScreen());
         },
+        child: const Icon(Icons.smart_toy),
       ),
     );
   }
@@ -547,11 +584,22 @@ class _MainScreenState extends State<MainScreen>
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected ? AppConstant.navy : Colors.transparent),
+              shape: BoxShape.circle,
+              color: isSelected
+                  ? Colors.green.shade800 // Nền xanh đậm khi selected
+                  : Colors.white, // Nền trắng khi không selected
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 4,
+                ),
+              ],
+            ),
             child: Icon(
               icon,
-              color: isSelected ? Colors.white : Colors.grey,
+              color: isSelected
+                  ? Colors.white // Icon trắng khi selected
+                  : Colors.green.shade800, // Icon xanh đậm khi không selected
               size: 24,
             ),
           ),
@@ -559,7 +607,10 @@ class _MainScreenState extends State<MainScreen>
           Text(
             label,
             style: TextStyle(
-              color: isSelected ? AppConstant.navy : Colors.grey,
+              fontWeight: FontWeight.w500,
+              color: isSelected
+                  ? Colors.green.shade800 // Chữ xanh đậm
+                  : Colors.green.shade700.withOpacity(0.6), // Chữ nhạt
               fontSize: 12,
             ),
           ),
@@ -567,41 +618,63 @@ class _MainScreenState extends State<MainScreen>
       ),
     );
   }
+}
 
-  Widget _buildPromoIcon({
-    required IconData icon,
-    required String text,
-    required Color color,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color.withValues(alpha: 0.1),
-            border: Border.all(color: color, width: 1),
-          ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 28,
-          ),
-        ),
-        SizedBox(height: 6),
-        Text(
-          text,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[800],
-          ),
-        ),
-      ],
-    );
+class BottomNavPainter extends CustomPainter {
+  final int selectedIndex;
+
+  BottomNavPainter({required this.selectedIndex});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white // Màu nền nav bar
+      ..style = PaintingStyle.fill;
+
+    final path = Path()
+      ..addRect(
+          Rect.fromLTWH(0, 0, size.width, size.height)); // Vẽ hình chữ nhật
+
+    canvas.drawPath(path, paint);
   }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+Widget _buildPromoIcon({
+  required IconData icon,
+  required String text,
+  required Color color,
+}) {
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        padding: EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color.withValues(alpha: 0.1),
+          border: Border.all(color: color, width: 1),
+        ),
+        child: Icon(
+          icon,
+          color: color,
+          size: 28,
+        ),
+      ),
+      SizedBox(height: 6),
+      Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: Colors.grey[800],
+        ),
+      ),
+    ],
+  );
 }
 
 class AllProductsWidget extends StatelessWidget {
@@ -609,9 +682,10 @@ class AllProductsWidget extends StatelessWidget {
   final List<ProductApiModel> products;
   final List<ProductApiModel> allProducts;
   const AllProductsWidget({
+    super.key,
     required this.addToRecentlyViewed,
     required this.products,
-     required this.allProducts,
+    required this.allProducts,
   });
 
   @override
@@ -624,7 +698,7 @@ class AllProductsWidget extends StatelessWidget {
       return const Center(child: Text('Không có sản phẩm nào.'));
     }
 
-    return Container(
+    return SizedBox(
       height: 300,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -634,7 +708,11 @@ class AllProductsWidget extends StatelessWidget {
           return GestureDetector(
             onTap: () {
               final productModel = convertApiToProductModel(product);
-              Get.to(() => ProductDetailsScreen(productModel: productModel,productApiModel: product, allProducts: allProducts,));
+              Get.to(() => ProductDetailsScreen(
+                    productModel: productModel,
+                    productApiModel: product,
+                    allProducts: allProducts,
+                  ));
             },
             child: Container(
               width: 150,
@@ -652,7 +730,7 @@ class AllProductsWidget extends StatelessWidget {
                       ),
                       child: Image(
                         image: CachedNetworkImageProvider(
-                            '$BASE_URL/' + product.img),
+                            '$BASE_URL/${product.img}'),
                         height: 150,
                         width: 150,
                         fit: BoxFit.cover,
@@ -700,11 +778,11 @@ class AllProductsWidget extends StatelessWidget {
 class RecentProductsWidget extends StatelessWidget {
   final List<ProductApiModel> recentlyViewedProducts;
 
-  const RecentProductsWidget({required this.recentlyViewedProducts});
+  const RecentProductsWidget({super.key, required this.recentlyViewedProducts});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 300,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -736,7 +814,7 @@ class RecentProductsWidget extends StatelessWidget {
                       ),
                       child: Image(
                         image: CachedNetworkImageProvider(
-                            '$BASE_URL/' + product.img),
+                            '$BASE_URL/${product.img}'),
                         height: 150,
                         width: 150,
                         fit: BoxFit.cover,
@@ -773,55 +851,3 @@ class RecentProductsWidget extends StatelessWidget {
     );
   }
 }
-
-class BottomNavPainter extends CustomPainter {
-  final int selectedIndex;
-
-  BottomNavPainter({required this.selectedIndex});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    Path path = Path();
-    double width = size.width;
-    double height = size.height;
-    double itemWidth = width / 3;
-    double circleRadius = 30;
-    double circleCenterX = itemWidth * selectedIndex + itemWidth / 2;
-
-    path.moveTo(0, 0);
-    path.lineTo(circleCenterX - circleRadius, 0);
-    path.quadraticBezierTo(
-      circleCenterX - circleRadius / 2,
-      0,
-      circleCenterX - circleRadius / 2,
-      circleRadius / 2,
-    );
-    path.quadraticBezierTo(
-      circleCenterX,
-      circleRadius * 1.5,
-      circleCenterX + circleRadius / 2,
-      circleRadius / 2,
-    );
-    path.quadraticBezierTo(
-      circleCenterX + circleRadius / 2,
-      0,
-      circleCenterX + circleRadius,
-      0,
-    );
-    path.lineTo(width, 0);
-    path.lineTo(width, height);
-    path.lineTo(0, height);
-    path.close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
-
-
