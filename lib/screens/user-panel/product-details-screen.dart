@@ -4,7 +4,9 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:chichanka_perfume/controllers/cart-controller.dart';
 import 'package:chichanka_perfume/models/cart-model.dart';
 import 'package:chichanka_perfume/models/product-model.dart';
+import 'package:chichanka_perfume/models/product_api_model.dart';
 import 'package:chichanka_perfume/screens/user-panel/cart-screen.dart';
+import 'package:chichanka_perfume/services/product_service.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -19,8 +21,17 @@ import 'package:chichanka_perfume/services/review_service.dart';
 
 
 class ProductDetailsScreen extends StatefulWidget {
+  
   final ProductModel productModel;
-  const ProductDetailsScreen({super.key, required this.productModel});
+  final ProductApiModel? productApiModel;
+  final List<ProductApiModel>? allProducts;
+
+ const ProductDetailsScreen({
+  super.key,
+  required this.productModel,
+  this.productApiModel,
+    this.allProducts,
+});
 
   @override
   State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
@@ -45,6 +56,7 @@ ProductModel convertToProductModel(dynamic apiProduct) {
 }
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
+  List<ProductApiModel> relatedProducts = [];
   bool isFavorite = false;
   bool isAnimatingFavorite = false;
   int? customerId;
@@ -59,12 +71,40 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return "$BASE_URL/$url";
   }
 
+  
+
+
+  List<String> getAllProductImages() {
+    if (widget.productApiModel != null) {
+    print("🔍 img: ${widget.productApiModel!.img}");
+    print("🔍 img2: ${widget.productApiModel!.img2}");
+    print("🔍 img3: ${widget.productApiModel!.img3}");
+      List<String> images = [];
+      if (widget.productApiModel!.img.isNotEmpty) images.add(widget.productApiModel!.img);
+      if (widget.productApiModel!.img2 != null && widget.productApiModel!.img2!.isNotEmpty)
+        images.add(widget.productApiModel!.img2!);
+      if (widget.productApiModel!.img3 != null && widget.productApiModel!.img3!.isNotEmpty)
+        images.add(widget.productApiModel!.img3!);
+            print("🖼️ Ảnh từ ProductApiModel: $images");
+      return images;
+    } else {
+      return widget.productModel.productImages;
+      
+    }
+
+}
+
+
+
   @override
   void initState() {
     super.initState();
     fetchProductReviews();
     loadCustomerIdAndCheckFavorite();
     checkIfCanReview();
+    fetchRelated();
+ print("🖼️ Danh sách ảnh: ${widget.productModel.productImages}");
+
   }
 
   // Kiểm tra xem người dùng có thể đánh giá sản phẩm này không
@@ -131,6 +171,42 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
+          Future<void> fetchRelated() async {
+                    if (widget.allProducts == null || widget.allProducts!.isEmpty) {
+                      print("⚠️ Không có danh sách sản phẩm để lọc.");
+                      return;
+                    }
+
+                    final currentCategory = widget.productModel.categoryName.trim().toLowerCase();
+                    final currentProductId = int.tryParse(widget.productModel.productId);
+
+                    if (currentProductId == null) {
+                      print("❌ Không thể phân tích productId hiện tại.");
+                      return;
+                    }
+
+                    final filtered = widget.allProducts!
+                        .where((p) =>
+                            p.categoryName.trim().toLowerCase() == currentCategory &&
+                            p.productId != currentProductId)
+                        .take(5)
+                        .toList();
+
+                    print("📦 Sản phẩm liên quan lấy được (LOCAL): ${filtered.length}");
+                    for (var item in filtered) {
+                      print("🪴 ${item.productName} - ${item.img}");
+                    }
+
+                    setState(() {
+                      relatedProducts = filtered;
+                      print("✅ Đã cập nhật relatedProducts: ${relatedProducts.length}");
+
+                    });
+                  }
+
+
+
+  
   Future<void> toggleFavorite() async {
     if (customerId == null) {
       Get.snackbar("Lỗi", "Vui lòng đăng nhập để sử dụng tính năng này");
@@ -193,7 +269,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         categoryName: widget.productModel.categoryName,
         salePrice: widget.productModel.salePrice,
         fullPrice: widget.productModel.fullPrice,
-        productImages: widget.productModel.productImages,
+        productImages: [widget.productModel.productImages],
         deliveryTime: widget.productModel.deliveryTime,
         isSale: widget.productModel.isSale,
         productDescription: widget.productModel.productDescription,
@@ -304,41 +380,31 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ],
                 ),
                 child: CarouselSlider(
-                  items: widget.productModel.productImages
-                      .map(
-                        (imageUrls) => ClipRRect(
-                          borderRadius: BorderRadius.circular(20.0),
-                          child: CachedNetworkImage(
-                            // imageUrl:
-                            //     '$BASE_URL/${widget.productModel.productImages.first}',
-                            imageUrl: getFullImageUrl(imageUrls),
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Icon(
-                                Icons.local_florist,
-                                size: 60,
-                                color: Colors.green.shade300,
-                              ),
-                            ),
+                  items: getAllProductImages().map(
+                    (imageUrl) => ClipRRect(
+                      borderRadius: BorderRadius.circular(20.0),
+                      child: CachedNetworkImage(
+                        imageUrl: '$BASE_URL/$imageUrl',
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Center(
+                            child: CircularProgressIndicator(color: Colors.green),
                           ),
                         ),
-                      )
-                      .toList(),
+                        errorWidget: (context, url, error) => Container(
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Icon(Icons.local_florist, size: 60, color: Colors.green.shade300),
+                        ),
+                      ),
+                    ),
+                  ).toList(),
                   options: CarouselOptions(
                     scrollDirection: Axis.horizontal,
                     autoPlay: true,
@@ -347,7 +413,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ),
                 ),
               ),
-
               // Thông tin sản phẩm
               Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -709,6 +774,125 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       const Text(
                           "Bạn cần mua sản phẩm này mới có thể đánh giá."),
                     ],
+                  ],
+                ),
+              ),
+
+              // Sản phẩm cùng loại
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Sản phẩm cùng loại",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 240,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: relatedProducts.length,
+                        itemBuilder: (context, index) {
+                          final product = relatedProducts[index];
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation, secondaryAnimation) =>
+                                      ProductDetailsScreen(
+                                        key: UniqueKey(),
+                                        productModel: ProductModel(
+                                          productId: product.productId.toString(),
+                                          productName: product.productName,
+                                          categoryId: product.categoryId.toString(),
+                                          categoryName: product.categoryName,
+                                          fullPrice: product.priceOutput.toString(),
+                                          salePrice: product.priceOutput.toString(),
+                                          isSale: false,
+                                          productDescription: product.description,
+                                          productImages: [product.img ?? ''],
+                                          deliveryTime: "2-3 ngày",
+                                          createdAt: null,
+                                          updatedAt: null,
+                                        ),
+                                        productApiModel: product,
+                                        allProducts: widget.allProducts,
+                                      ),
+                                  transitionDuration: Duration(milliseconds: 300),
+                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                    return FadeTransition(
+                                      opacity: animation,
+                                      child: child,
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                            child: Container(
+                              width: 160,
+                              margin: const EdgeInsets.only(right: 12),
+                              child: Card(
+                                elevation: 4,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(12)),
+                                      child: CachedNetworkImage(
+                                        imageUrl: '$BASE_URL/${product.img ?? ''}',
+                                        height: 120,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                        placeholder: (_, __) => Container(
+                                          color: Colors.green.shade50,
+                                          child: Center(child: CircularProgressIndicator()),
+                                        ),
+                                        errorWidget: (_, __, ___) =>
+                                            Icon(Icons.broken_image),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            product.productName,
+                                            style: TextStyle(fontWeight: FontWeight.bold),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            "${formatPrice(product.priceOutput.toString())} VNĐ",
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.green.shade700,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ],
                 ),
               ),

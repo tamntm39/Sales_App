@@ -230,10 +230,9 @@ class _SigninScreenState extends State<SignInScreen> {
         ),
         child: TextButton(
           onPressed: () async {
-            // String email = userEmail.text.trim();
-            // String password = userPassword.text.trim();
-            String email = "tao@gmail.com";
-            String password = "123456";
+            String email = userEmail.text.trim();
+            String password = userPassword.text.trim();
+        
 
             if (email.isEmpty || password.isEmpty) {
               Get.snackbar(
@@ -245,8 +244,7 @@ class _SigninScreenState extends State<SignInScreen> {
               );
             } else {
               // Gọi API đăng nhập
-              final result = await _authService.login(
-                  email, password);
+              final result = await _authService.login(email, password);
               print(result); // In log để kiểm tra response
               if (result['success'] == true) {
                 final userData = result['data'];

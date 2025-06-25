@@ -85,35 +85,67 @@ class AllProductsWidget extends StatelessWidget {
                       ),
                       borderRadius: BorderRadius.circular(10.0),
                     ),
-                    child: FillImageCard(
-                      borderRadius: 10.0,
-                      width: double.infinity,
-                      heightImage: Get.height / 4, // Tăng chiều cao ảnh
-                      contentPadding:
-                          const EdgeInsets.all(8.0), // Thêm padding nội dung
-                      imageProvider: CachedNetworkImageProvider(
-                        productModel.productImages[0],
-                      ),
-                      title: Center(
-                        child: Text(
-                          productModel.productName,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 2, // Cho phép xuống dòng tối đa 2 dòng
-                          style: const TextStyle(
-                            fontSize: 12.0,
-                            fontWeight: FontWeight.bold,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10),
+                          ),
+                          child: CachedNetworkImage(
+                            imageUrl: productModel.productImages[0],
+                            height: Get.height / 4,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const Center(
+                                child: CupertinoActivityIndicator()),
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.error, color: Colors.red),
                           ),
                         ),
-                      ),
-                      footer: Center(
-                        child: Text(
-                          "${currencyFormat.format(double.parse(productModel.fullPrice))} đ",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.local_florist,
+                                      size: 16, color: Colors.green),
+                                  SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      "Tên: ${productModel.productName}",
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 13.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(Icons.attach_money,
+                                      size: 16, color: Colors.green),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    "Giá: ${currencyFormat.format(double.parse(productModel.fullPrice))} đ",
+                                    style: const TextStyle(
+                                      fontSize: 13.0,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),

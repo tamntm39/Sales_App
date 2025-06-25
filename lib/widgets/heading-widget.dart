@@ -8,12 +8,17 @@ class HeadingWidget extends StatelessWidget {
   final String headingSubTitle;
   final VoidCallback onTap;
   final String buttonText;
+  final IconData? icon;
+  final Color? subTitleColor; // ✅ Cho phép tùy chỉnh màu phụ đề
+
   const HeadingWidget({
     super.key,
     required this.headingTitle,
     required this.headingSubTitle,
     required this.onTap,
     required this.buttonText,
+    this.icon,
+    this.subTitleColor,
   });
 
   @override
@@ -25,23 +30,37 @@ class HeadingWidget extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                Text(
-                  headingTitle,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                if (icon != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Icon(
+                      icon,
+                      color: Colors.green.shade700,
+                      size: 24,
+                    ),
                   ),
-                ),
-                Text(
-                  headingSubTitle,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 12.0,
-                    color: Colors.grey,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      headingTitle,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade800,
+                      ),
+                    ),
+                    Text(
+                      headingSubTitle,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12.0,
+                        color: subTitleColor ??
+                            Colors.white, // ✅ Mặc định trắng luôn
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -60,9 +79,10 @@ class HeadingWidget extends StatelessWidget {
                   child: Text(
                     buttonText,
                     style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12.0,
-                        color: AppConstant.appScendoryColor),
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12.0,
+                      color: AppConstant.appScendoryColor,
+                    ),
                   ),
                 ),
               ),

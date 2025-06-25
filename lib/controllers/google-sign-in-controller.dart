@@ -1,62 +1,94 @@
-// ignore_for_file: file_names, unused_local_variable, avoid_print
-
-import 'dart:convert';
-import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/user-model.dart';
+import '../services/google_auth_service.dart';
+import '../services/customer/get_customer_service.dart';
 
 class GoogleSignInController extends GetxController {
-  // Thay YOUR_WEB_CLIENT_ID bằng client id web OAuth 2.0 trong Google Cloud Console
-  final GoogleSignIn googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-    serverClientId: '122754317810-s8g8tikvthd720j11eefl500s3j5lllo.apps.googleusercontent.com',
+  var userModel = Rxn<UserModel>();
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email'],
+    clientId: '122754317810-s8g8tikvthd720j11eefl500s3j5lllo.apps.googleusercontent.com', // Đặt đúng clientId Web
   );
 
   Future<void> signInWithGoogle() async {
     try {
-      // Người dùng đăng nhập với Google
-      final GoogleSignInAccount? googleSignInAccount = await googleSignIn.signIn();
-
-      if (googleSignInAccount == null) {
-        print("Người dùng đã hủy đăng nhập.");
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        Get.snackbar('Thông báo', 'Bạn đã hủy đăng nhập Google.');
         return;
       }
 
-      EasyLoading.show(status: "Please wait...");
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-      final GoogleSignInAuthentication googleSignInAuthentication =
-      await googleSignInAccount.authentication;
-
-      final idToken = googleSignInAuthentication.idToken;
-      print('idToken lấy được: $idToken');
-
-      if (idToken == null) {
-        EasyLoading.dismiss();
-        print("Không có idToken, có thể do chưa cấu hình đúng OAuth client.");
+      if (googleAuth.idToken == null) {
+        Get.snackbar('Lỗi', 'Không lấy được idToken.');
         return;
       }
 
-      // Gửi idToken đến backend để xác thực
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2:7072/api/auth/google'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'idToken': idToken}),
-      );
+      final response = await GoogleAuthService().googleSignIn(googleAuth.idToken!);
 
-      EasyLoading.dismiss();
+      if (response['success']) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('customerId', response['data']['customerId']);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print("Backend xác thực thành công: $data");
-        Get.offAll(() => const MainScreen());
+        await loadUserData();
+
+        Get.snackbar('Thành công', 'Đăng nhập Google thành công.');
+
+        // Ví dụ: chuyển sang Home
+        Get.offAllNamed('/home');
       } else {
-        print("Backend xác thực thất bại: ${response.body}");
+        Get.snackbar('Lỗi', response['message'] ?? 'Đăng nhập Google thất bại.');
       }
     } catch (e) {
-      EasyLoading.dismiss();
-      print("Lỗi khi đăng nhập Google: $e");
+      Get.snackbar('Lỗi', 'Đăng nhập Google thất bại: $e');
+    }
+  }
+
+  Future<void> loadUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      int? customerId = prefs.getInt('customerId');
+
+      if (customerId != null) {
+        final result = await GetCustomerService().getCustomer(customerId);
+
+        if (result['success']) {
+          final data = result['data'];
+          final imgUrl = data['image'];
+          final fullImgUrl = (imgUrl != null && imgUrl.startsWith('/'))
+              ? 'http://10.0.2.2:7072$imgUrl'
+              : imgUrl ?? '';
+
+          userModel.value = UserModel.fromMap({...data, 'userImg': fullImgUrl});
+        } else {
+          Get.snackbar('Lỗi', result['message'] ?? 'Không thể tải thông tin người dùng.');
+        }
+      } else {
+        Get.snackbar('Lỗi', 'Không tìm thấy customerId trong thiết bị.');
+      }
+    } catch (e) {
+      Get.snackbar('Lỗi', 'Không thể tải thông tin người dùng: $e');
+    }
+  }
+
+  Future<void> signOutGoogle() async {
+    try {
+      await _googleSignIn.signOut();
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('customerId');
+
+      userModel.value = null;
+
+      Get.snackbar('Thành công', 'Đăng xuất Google thành công.');
+      Get.offAllNamed('/login'); // Ví dụ chuyển về màn hình login
+    } catch (e) {
+      Get.snackbar('Lỗi', 'Đăng xuất Google thất bại: $e');
     }
   }
 }

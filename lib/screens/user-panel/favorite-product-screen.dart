@@ -41,7 +41,7 @@ class _FavouriteProductScreenState extends State<FavouriteProductScreen> {
         favoriteProducts = data.map<ProductModel>((e) => ProductModel(
           productId: e['productId'].toString(),
           productName: e['productName'] ?? '',
-          productImages: [e['img'] ?? ''],
+          productImages: e['img'] ?? '',
           fullPrice: e['priceOutput'].toString(),
           salePrice: e['priceOutput'].toString(),
           isSale: false,
@@ -49,8 +49,8 @@ class _FavouriteProductScreenState extends State<FavouriteProductScreen> {
           categoryName: '',
           productDescription: '',
           deliveryTime: '',
-          createdAt: '',
-          updatedAt: '',
+          createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
         )).toList();
         isLoading = false;
       });
