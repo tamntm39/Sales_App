@@ -142,6 +142,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     customerId: customerId,
     productId: int.tryParse(widget.productModel.productId) ?? 0,
     comment: _feedbackController.text,
+    fullName: '', // Bạn có thể lấy tên đầy đủ từ thông tin người dùng nếu cần
   );
 
   final success = await ReviewService.createReview(review);
@@ -735,7 +736,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                               ),
                               subtitle: Text(
-                                "Người dùng ID: ${review.customerId}",
+                                "Tài Khoản: ${review.fullName}",
                                 style: TextStyle(color: Colors.grey[600]),
                               ),
                             ),
