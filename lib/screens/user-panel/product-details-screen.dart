@@ -12,6 +12,11 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config.dart';
 import 'package:chichanka_perfume/services/favorite_service.dart';
+import 'package:chichanka_perfume/services/order_service.dart';
+import 'package:chichanka_perfume/models/order_api_model.dart';
+import 'package:chichanka_perfume/models/review_api_model.dart';
+import 'package:chichanka_perfume/services/review_service.dart';
+
 
 class ProductDetailsScreen extends StatefulWidget {
   final ProductModel productModel;
@@ -44,12 +49,77 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   bool isAnimatingFavorite = false;
   int? customerId;
   final CartController cartController = Get.put(CartController());
+  List<ReviewApiModel> productReviews = [];
+  TextEditingController _feedbackController = TextEditingController();
+  double rating = 5.0;
+  bool canReview = false;
+  bool isCheckingReview = true;
+  String getFullImageUrl(String url) {
+    if (url.startsWith("http")) return url;
+    return "$BASE_URL/$url";
+  }
 
   @override
   void initState() {
     super.initState();
+    fetchProductReviews();
     loadCustomerIdAndCheckFavorite();
+    checkIfCanReview();
   }
+
+  // Kiểm tra xem người dùng có thể đánh giá sản phẩm này không
+  Future<void> checkIfCanReview() async {
+    final prefs = await SharedPreferences.getInstance();
+    final customerId = prefs.getInt('customerId');
+    if (customerId == null) return;
+
+    final orders = await OrderService().getOrdersByCustomerId(customerId);
+    setState(() {
+      canReview = orders.any((order) =>
+          order.productId == int.tryParse(widget.productModel.productId));
+      isCheckingReview = false;
+    });
+  }
+
+  // Lấy danh sách đánh giá sản phẩm
+  Future<void> fetchProductReviews() async {
+    final productId = int.tryParse(widget.productModel.productId) ?? 0;
+    print('productId gọi API: $productId');
+    final reviews = await ReviewService.getReviewsByProductId(productId);
+    setState(() {
+      productReviews = reviews;
+    });
+  }
+
+  // Gửi đánh giá sản phẩm
+  Future<void> submitReview() async {
+  final prefs = await SharedPreferences.getInstance();
+  final customerId = prefs.getInt('customerId');
+  if (customerId == null) return;
+
+  final review = ReviewApiModel(
+    reviewId: 0,
+    customerId: customerId,
+    productId: int.tryParse(widget.productModel.productId) ?? 0,
+    comment: _feedbackController.text,
+  );
+
+  final success = await ReviewService.createReview(review);
+
+  if (success) {
+    _feedbackController.clear();
+    await fetchProductReviews();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Gửi đánh giá thành công")),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Gửi đánh giá thất bại")),
+    );
+  }
+}
+
+
 
   Future<void> loadCustomerIdAndCheckFavorite() async {
     final prefs = await SharedPreferences.getInstance();
@@ -144,6 +214,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+  print('productReviews.length: ${productReviews.length}');
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -238,8 +309,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         (imageUrls) => ClipRRect(
                           borderRadius: BorderRadius.circular(20.0),
                           child: CachedNetworkImage(
-                            imageUrl:
-                                '$BASE_URL/${widget.productModel.productImages.first}',
+                            // imageUrl:
+                            //     '$BASE_URL/${widget.productModel.productImages.first}',
+                            imageUrl: getFullImageUrl(imageUrls),
                             fit: BoxFit.cover,
                             placeholder: (context, url) => Container(
                               decoration: BoxDecoration(
@@ -555,6 +627,89 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ],
                     ),
                   ),
+                ),
+              ),
+              // Đánh giá sản phẩm
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Đánh giá sản phẩm",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Danh sách đánh giá hiện đại
+                    if (productReviews.isEmpty)
+                      const Text("Chưa có đánh giá nào."),
+                    if (productReviews.isNotEmpty)
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: productReviews.length,
+                        separatorBuilder: (context, index) => SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final review = productReviews[index];
+                          return Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.green.shade100,
+                                child: Icon(Icons.person, color: Colors.green.shade700),
+                              ),
+                              title: Text(
+                                review.comment,
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                              ),
+                              subtitle: Text(
+                                "Người dùng ID: ${review.customerId}",
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                    const SizedBox(height: 16),
+
+                    // Form đánh giá nếu được phép
+                    if (!isCheckingReview && canReview) ...[
+                      Text("Viết đánh giá của bạn:",
+                          style: TextStyle(fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _feedbackController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: "Cảm nghĩ của bạn...",
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          contentPadding: EdgeInsets.all(12),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: submitReview,
+                        child: const Text("Gửi đánh giá"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                        ),
+                      )
+                    ] else if (!isCheckingReview) ...[
+                      const Text(
+                          "Bạn cần mua sản phẩm này mới có thể đánh giá."),
+                    ],
+                  ],
                 ),
               ),
 
