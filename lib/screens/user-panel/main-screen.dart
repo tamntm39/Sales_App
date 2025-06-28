@@ -453,7 +453,7 @@ class _MainScreenState extends State<MainScreen>
               right: 0,
               child: CustomPaint(
                 size: Size(double.infinity, 70),
-                painter: BottomNavPainter(selectedIndex: _selectedIndex),
+                painter: BottomNavPainter(),
               ),
             ),
             Row(
@@ -760,10 +760,6 @@ class RecentProductsWidget extends StatelessWidget {
 }
 
 class BottomNavPainter extends CustomPainter {
-  final int selectedIndex;
-
-  BottomNavPainter({required this.selectedIndex});
-
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
@@ -771,40 +767,15 @@ class BottomNavPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     Path path = Path();
-    double width = size.width;
-    double height = size.height;
-    double itemWidth = width / 3;
-    double circleRadius = 30;
-    double circleCenterX = itemWidth * selectedIndex + itemWidth / 2;
-
     path.moveTo(0, 0);
-    path.lineTo(circleCenterX - circleRadius, 0);
-    path.quadraticBezierTo(
-      circleCenterX - circleRadius / 2,
-      0,
-      circleCenterX - circleRadius / 2,
-      circleRadius / 2,
-    );
-    path.quadraticBezierTo(
-      circleCenterX,
-      circleRadius * 1.5,
-      circleCenterX + circleRadius / 2,
-      circleRadius / 2,
-    );
-    path.quadraticBezierTo(
-      circleCenterX + circleRadius / 2,
-      0,
-      circleCenterX + circleRadius,
-      0,
-    );
-    path.lineTo(width, 0);
-    path.lineTo(width, height);
-    path.lineTo(0, height);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
     path.close();
 
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
