@@ -12,7 +12,7 @@ import 'package:chichanka_perfume/services/category_service.dart';
 import '../../config.dart';
 
 class AllCategoriesScreen extends StatefulWidget {
-  const AllCategoriesScreen({Key? key}) : super(key: key);
+  const AllCategoriesScreen({super.key});
 
   @override
   State<AllCategoriesScreen> createState() => _AllCategoriesScreenState();

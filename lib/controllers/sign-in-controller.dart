@@ -32,6 +32,7 @@ class SignInController extends GetxController {
         colorText: AppConstant.appTextColor,
       );
     }
+    return null;
     //return null;
   }
 }

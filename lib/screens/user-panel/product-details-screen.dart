@@ -81,10 +81,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     print("🔍 img3: ${widget.productApiModel!.img3}");
       List<String> images = [];
       if (widget.productApiModel!.img.isNotEmpty) images.add(widget.productApiModel!.img);
-      if (widget.productApiModel!.img2 != null && widget.productApiModel!.img2!.isNotEmpty)
+      if (widget.productApiModel!.img2 != null && widget.productApiModel!.img2!.isNotEmpty) {
         images.add(widget.productApiModel!.img2!);
-      if (widget.productApiModel!.img3 != null && widget.productApiModel!.img3!.isNotEmpty)
+      }
+      if (widget.productApiModel!.img3 != null && widget.productApiModel!.img3!.isNotEmpty) {
         images.add(widget.productApiModel!.img3!);
+      }
             print("🖼️ Ảnh từ ProductApiModel: $images");
       return images;
     } else {

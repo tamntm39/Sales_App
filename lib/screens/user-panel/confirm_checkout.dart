@@ -22,7 +22,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController detailAddressController = TextEditingController();
-  final NumberFormat _currencyFormat = NumberFormat('#,##0', 'vi_VN');
+  final NumberFormat currencyFormat = NumberFormat('#,##0', 'vi_VN');
   double discount = 0.0;
 
   // Biến trạng thái cho địa chỉ GHN
@@ -38,7 +38,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
   bool isCalculatingShipping = false;
 
   // Thêm biến trạng thái để kiểm soát hiệu ứng tải QR
-  bool _isLoadingQr = false;
+  bool isLoadingQr = false;
 
   Future<void> loadProvinces(StateSetter setState) async {
     provinces = await GhnService.fetchProvinces();
@@ -150,8 +150,9 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                     if (value != null) {
                       districts = await GhnService.fetchDistricts(value.id);
                       setState(() {
-                        if (districts.isNotEmpty)
+                        if (districts.isNotEmpty) {
                           selectedDistrict = districts.first;
+                        }
                       });
                       if (districts.isNotEmpty) {
                         wards = await GhnService.fetchWards(districts.first.id);
@@ -239,7 +240,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                           )
                         : Text(
                             shippingFee != null
-                                ? '${_currencyFormat.format(shippingFee)} đ'
+                                ? '${currencyFormat.format(shippingFee)} đ'
                                 : 'Chọn địa chỉ',
                             style: TextStyle(
                               fontSize: 16,
@@ -271,16 +272,16 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                     setState(() {
                       selectedPaymentMethod = newValue!;
                       if (newValue == 'Thanh toán mã QR') {
-                        _isLoadingQr = true;
+                        isLoadingQr = true;
                         Future.delayed(const Duration(seconds: 2), () {
                           if (context.mounted) {
                             setState(() {
-                              _isLoadingQr = false;
+                              isLoadingQr = false;
                             });
                           }
                         });
                       } else {
-                        _isLoadingQr = false;
+                        isLoadingQr = false;
                       }
                     });
                   },
@@ -314,7 +315,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                         padding: const EdgeInsets.all(16),
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 500),
-                          child: _isLoadingQr
+                          child: isLoadingQr
                               ? Center(
                                   key: const ValueKey('loading'),
                                   child: CircularProgressIndicator(
@@ -364,7 +365,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                       });
                       Get.snackbar(
                         'Thành công',
-                        'Áp dụng mã giảm giá thành công! Giảm ${_currencyFormat.format(discount)}đ',
+                        'Áp dụng mã giảm giá thành công! Giảm ${currencyFormat.format(discount)}đ',
                         backgroundColor: Colors.green,
                         colorText: Colors.white,
                       );
@@ -397,7 +398,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                       style: TextStyle(fontSize: 16),
                     ),
                     Text(
-                      '${_currencyFormat.format(finalPrice)} đ',
+                      '${currencyFormat.format(finalPrice)} đ',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

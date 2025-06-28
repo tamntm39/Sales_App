@@ -143,7 +143,7 @@ class _CartScreenState extends State<CartScreen>
           _buildBottomBar(),
         ],
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: SizedBox(
         height: 70,
         child: Stack(
           children: [

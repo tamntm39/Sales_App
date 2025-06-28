@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:chichanka_perfume/models/cart-model.dart';
 import 'package:chichanka_perfume/models/order_api_model.dart';
-import 'package:chichanka_perfume/utils/app-constant.dart';
 import 'package:chichanka_perfume/config.dart';
 
 class OrderService {

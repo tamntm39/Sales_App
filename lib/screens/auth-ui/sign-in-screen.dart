@@ -1,11 +1,9 @@
 import 'package:chichanka_perfume/controllers/get-user-data-controller.dart';
 import 'package:chichanka_perfume/controllers/sign-in-controller.dart';
-import 'package:chichanka_perfume/screens/admin-panel/admin-main-screen.dart';
 import 'package:chichanka_perfume/screens/auth-ui/forget-password-screen.dart';
 import 'package:chichanka_perfume/screens/auth-ui/sign-up-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';

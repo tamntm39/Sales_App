@@ -93,5 +93,6 @@ class SignUpController extends GetxController {
       );
       //return null; // Trả về null nếu có lỗi khác
     }
+    return null;
   }
 }

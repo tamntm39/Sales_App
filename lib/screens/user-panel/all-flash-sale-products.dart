@@ -11,7 +11,6 @@ import 'dart:convert';
 import '../../models/sale_off_product_model.dart'; // Model riêng cho sản phẩm sale
 import '../../utils/app-constant.dart';
 import 'package:chichanka_perfume/models/product-model.dart';
-import 'package:chichanka_perfume/models/sale_off_product_model.dart';
 import '../../config.dart';
 
 String getImageUrl(String img) {

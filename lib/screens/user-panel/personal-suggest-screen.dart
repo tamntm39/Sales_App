@@ -4,7 +4,6 @@ import '../../models/category_api_model.dart';
 import '../../models/product_api_model.dart';
 import '../../services/category_service.dart';
 import '../../services/suggest-service.dart';
-import '../../utils/app-constant.dart';
 import 'suggest-screen.dart';
 
 class PersonalizedSuggestionsScreen extends StatefulWidget {
