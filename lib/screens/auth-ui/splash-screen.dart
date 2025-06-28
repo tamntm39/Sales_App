@@ -52,10 +52,10 @@ class _SplashScreenState extends State<SplashScreen> {
         elevation: 0,
         centerTitle: true,
         title: Padding(
-          padding: const EdgeInsets.only(top: 30.0), // Dời logo xuống 10 pixel
+          padding: const EdgeInsets.only(top: 4.0), // Giảm padding lại cho gọn
           child: Image.asset(
-            'assets/images/chichanka_logo.png',
-            height: 110, // Kích thước logo
+            'assets/images/lala-logo.png',
+            height: 48, // CHỈNH CHỖ NÀY: từ 100 xuống còn 48
             fit: BoxFit.contain,
           ),
         ),

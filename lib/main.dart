@@ -21,21 +21,48 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  static const Color primaryGreen = Color(0xFF4CAF50); // Xanh lá cây cảnh
+
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Chichanka Perfume',
+      title: 'Chichanka Plant Shop',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: primaryGreen,
+          brightness: Brightness.light,
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF5FFF6), // nền nhẹ nhàng
+        appBarTheme: const AppBarTheme(
+          backgroundColor: primaryGreen,
+          foregroundColor: Colors.white,
+          centerTitle: true,
+        ),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.black87),
+          bodyMedium: TextStyle(color: Colors.black87),
+          titleLarge: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: primaryGreen,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryGreen,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
       ),
       home: const SplashScreen(),
       builder: EasyLoading.init(),
       getPages: [
-        GetPage(name: '/home', page: () => const MainScreen()), // Đã fix
+        GetPage(name: '/home', page: () => const MainScreen()),
       ],
     );
   }
 }
-  

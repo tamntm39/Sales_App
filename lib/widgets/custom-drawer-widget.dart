@@ -3,6 +3,7 @@ import 'package:chichanka_perfume/screens/user-panel/all-orders-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/all-products-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/contact-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/favorite-product-screen.dart';
+import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/personal-suggest-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/settings-screen.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
@@ -57,12 +58,30 @@ class DrawerWidget extends StatelessWidget {
         // Loại bỏ trùng lặp và trả về danh sách
         return scentPreferences.isNotEmpty
             ? scentPreferences.toSet().toList()
-            : ['Cây trong nhà', 'Cây ngoài trời', 'Cây văn phòng', 'Cây sen đá', 'Cây phong thủy']; // Mặc định nếu không có dữ liệu
+            : [
+                'Cây trong nhà',
+                'Cây ngoài trời',
+                'Cây văn phòng',
+                'Cây sen đá',
+                'Cây phong thủy'
+              ]; // Mặc định nếu không có dữ liệu
       }
-      return ['Cây trong nhà', 'Cây ngoài trời', 'Cây văn phòng', 'Cây sen đá', 'Cây phong thủy']; // Mặc định nếu không có người dùng
+      return [
+        'Cây trong nhà',
+        'Cây ngoài trời',
+        'Cây văn phòng',
+        'Cây sen đá',
+        'Cây phong thủy'
+      ]; // Mặc định nếu không có người dùng
     } catch (e) {
       print('Error fetching suggestions: $e');
-      return ['Cây trong nhà', 'Cây ngoài trời', 'Cây văn phòng', 'Cây sen đá', 'Cây phong thủy']; // Mặc định khi có lỗi
+      return [
+        'Cây trong nhà',
+        'Cây ngoài trời',
+        'Cây văn phòng',
+        'Cây sen đá',
+        'Cây phong thủy'
+      ]; // Mặc định khi có lỗi
     }
   }
 
@@ -183,6 +202,10 @@ class DrawerWidget extends StatelessWidget {
           title: "Trang chủ",
           icon: Icons.home,
           textColor: Colors.black,
+          onTap: () {
+            Get.back();
+            Get.to(() => const MainScreen());
+          },
         ),
         _buildMenuItem(
           context: context,

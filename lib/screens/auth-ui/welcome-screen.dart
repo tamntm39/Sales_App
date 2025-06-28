@@ -3,6 +3,7 @@ import 'package:chichanka_perfume/screens/auth-ui/sign-in-screen.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:lottie/lottie.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -19,10 +20,10 @@ class WelcomeScreen extends StatelessWidget {
         backgroundColor: AppConstant.navy,
         automaticallyImplyLeading: false,
         title: Padding(
-          padding: const EdgeInsets.only(top: 30.0), // Dời logo xuống 10 pixel
+          padding: const EdgeInsets.only(top: 4.0), // Giảm padding lại cho gọn
           child: Image.asset(
-            'assets/images/chichanka_logo.png',
-            height: 110,
+            'assets/images/lala-logo.png',
+            height: 48, // CHỈNH CHỖ NÀY: từ 100 xuống còn 48
             fit: BoxFit.contain,
           ),
         ),
