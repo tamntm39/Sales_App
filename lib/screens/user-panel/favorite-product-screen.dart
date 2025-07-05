@@ -40,7 +40,7 @@ class _FavouriteProductScreenState extends State<FavouriteProductScreen> {
         favoriteProducts = data.map<ProductModel>((e) => ProductModel(
           productId: e['productId'].toString(),
           productName: e['productName'] ?? '',
-          productImages: e['img'] ?? '',
+          productImages: [e['img'] ?? ''],
           fullPrice: e['priceOutput'].toString(),
           salePrice: e['priceOutput'].toString(),
           isSale: false,
