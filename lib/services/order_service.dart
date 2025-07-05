@@ -74,6 +74,7 @@ class OrderService {
     }
     return null;
   }
+
   Future<bool> cancelOrder(int orderId) async {
     final url = Uri.parse('$BASE_URL/api/Order/CancelOrder?orderId=$orderId');
 
@@ -90,5 +91,23 @@ class OrderService {
     }
 
     return false;
+  }
+
+  Future<Map<String, dynamic>> getOrderDetails(int orderId) async {
+    final url =
+        Uri.parse('$BASE_URL/api/Order/ListDetailOrder?orderId=$orderId');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonBody = jsonDecode(response.body);
+      if (jsonBody['success'] == true &&
+          jsonBody['data'] != null &&
+          jsonBody['data'] is Map) {
+        return jsonBody['data'] as Map<String, dynamic>;
+      }
+    } else {
+      print('API error: ${response.statusCode} - ${response.body}');
+    }
+    return {};
   }
 }

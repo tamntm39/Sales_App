@@ -8,6 +8,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'order-detail-screen.dart';
+
 class OrderGroup {
   final int orderId;
   final DateTime orderDate;
@@ -33,7 +35,7 @@ class AllOrdersScreen extends StatefulWidget {
 
 class _AllOrdersScreenState extends State<AllOrdersScreen> {
   final ProductPriceController productPriceController =
-  Get.put(ProductPriceController());
+      Get.put(ProductPriceController());
   dynamic _filterStatus = 'all';
   late Future<List<OrderApiModel>> _ordersFuture;
   int? customerId;
@@ -171,7 +173,7 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: isSelected ? AppConstant.appMainColor : Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -226,108 +228,118 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
 
   Widget _buildOrderGroupCard(OrderGroup group) {
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: '₫');
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Mã đơn: ${group.orderId}",
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: AppConstant.navy),
-            ),
-            Text(
-              "Ngày đặt: ${DateFormat('dd/MM/yyyy HH:mm').format(group.orderDate)}",
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            const SizedBox(height: 8),
-            ...group.items.map((item) => ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading:
-              Icon(Icons.shopping_bag, color: AppConstant.appMainColor),
-              title: Text(item.productName),
-              subtitle: Text("Số lượng: ${item.productQuantity}"),
-              trailing: Text(formatter.format(item.priceOutput)),
-            )),
-            const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Tổng tiền:",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  formatter.format(group.totalAmount),
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppConstant.appMainColor),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _buildStatusChip(group.state),
-            const SizedBox(height: 8),
-            if (group.state == 0)
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text("Xác nhận"),
-                        content:
-                        const Text("Bạn có chắc muốn hủy đơn hàng này không?"),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text("Không"),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text("Có"),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirm == true) {
-                      bool isCancelled =
-                      await OrderService().cancelOrder(group.orderId);
-
-                      if (isCancelled) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text("Hủy đơn hàng thành công")),
-                        );
-                        _refreshOrders();
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text("Hủy đơn hàng thất bại")),
-                        );
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  child: const Text(
-                    "Hủy đơn",
-                    style: TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OrderDetailScreen(orderId: group.orderId),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Mã đơn: ${group.orderId}",
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, color: AppConstant.navy),
               ),
-          ],
+              Text(
+                "Ngày đặt: ${DateFormat('dd/MM/yyyy HH:mm').format(group.orderDate)}",
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 8),
+              ...group.items.map((item) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.shopping_bag,
+                        color: AppConstant.appMainColor),
+                    title: Text(item.productName),
+                    subtitle: Text("Số lượng: ${item.productQuantity}"),
+                    trailing: Text(formatter.format(item.priceOutput)),
+                  )),
+              const Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Tổng tiền:",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    formatter.format(group.totalAmount),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppConstant.appMainColor),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildStatusChip(group.state),
+              const SizedBox(height: 8),
+              if (group.state == 0)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text("Xác nhận"),
+                          content: const Text(
+                              "Bạn có chắc muốn hủy đơn hàng này không?"),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text("Không"),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text("Có"),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirm == true) {
+                        final isCancelled =
+                            await OrderService().cancelOrder(group.orderId);
+
+                        if (isCancelled) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text("Hủy đơn hàng thành công")),
+                          );
+                          _refreshOrders();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text("Hủy đơn hàng thất bại")),
+                          );
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                    ),
+                    child: const Text(
+                      "Hủy đơn",
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
