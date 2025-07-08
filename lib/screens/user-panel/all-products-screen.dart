@@ -11,7 +11,6 @@ import 'package:chichanka_perfume/models/product_api_model.dart';
 import 'package:chichanka_perfume/services/product_service.dart';
 import '../../config.dart';
 import 'package:chichanka_perfume/models/product-model.dart';
-import 'package:chichanka_perfume/models/product_api_model.dart';
 
 class AllProductsScreen extends StatefulWidget {
   const AllProductsScreen({super.key});
@@ -197,7 +196,11 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                                     final productModel =
                                         convertApiToProductModel(product);
                                     Get.to(() => ProductDetailsScreen(
-                                        productModel: productModel));
+                                          productModel: productModel,
+                                          productApiModel: product,
+                                          allProducts:
+                                              products, // <-- truyền danh sách này
+                                        ));
                                   },
                                   child: Column(
                                     crossAxisAlignment:

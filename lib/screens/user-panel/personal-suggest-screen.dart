@@ -32,8 +32,9 @@ class _PersonalizedSuggestionsScreenState
       final Map<int, ProductApiModel?> productMap = {};
 
       for (final category in fetchedCategories) {
-        final products = await SuggestionProductService.fetchProductsByCategoryId(
-            category.categoryId);
+        final products =
+            await SuggestionProductService.fetchProductsByCategoryId(
+                category.categoryId);
         productMap[category.categoryId] =
             products.isNotEmpty ? products.first : null;
       }
@@ -89,4 +90,3 @@ class _PersonalizedSuggestionsScreenState
     );
   }
 }
-

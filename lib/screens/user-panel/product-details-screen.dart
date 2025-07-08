@@ -19,19 +19,17 @@ import 'package:chichanka_perfume/models/order_api_model.dart';
 import 'package:chichanka_perfume/models/review_api_model.dart';
 import 'package:chichanka_perfume/services/review_service.dart';
 
-
 class ProductDetailsScreen extends StatefulWidget {
-  
   final ProductModel productModel;
   final ProductApiModel? productApiModel;
   final List<ProductApiModel>? allProducts;
 
- const ProductDetailsScreen({
-  super.key,
-  required this.productModel,
-  this.productApiModel,
+  const ProductDetailsScreen({
+    super.key,
+    required this.productModel,
+    this.productApiModel,
     this.allProducts,
-});
+  });
 
   @override
   State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
@@ -62,7 +60,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   int? customerId;
   final CartController cartController = Get.put(CartController());
   List<ReviewApiModel> productReviews = [];
-  TextEditingController _feedbackController = TextEditingController();
+  final TextEditingController _feedbackController = TextEditingController();
   double rating = 5.0;
   bool canReview = false;
   bool isCheckingReview = true;
@@ -71,32 +69,28 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return "$BASE_URL/$url";
   }
 
-  
-
-
   List<String> getAllProductImages() {
     if (widget.productApiModel != null) {
-    print("🔍 img: ${widget.productApiModel!.img}");
-    print("🔍 img2: ${widget.productApiModel!.img2}");
-    print("🔍 img3: ${widget.productApiModel!.img3}");
+      print("🔍 img: ${widget.productApiModel!.img}");
+      print("🔍 img2: ${widget.productApiModel!.img2}");
+      print("🔍 img3: ${widget.productApiModel!.img3}");
       List<String> images = [];
-      if (widget.productApiModel!.img.isNotEmpty) images.add(widget.productApiModel!.img);
-      if (widget.productApiModel!.img2 != null && widget.productApiModel!.img2!.isNotEmpty) {
+      if (widget.productApiModel!.img.isNotEmpty)
+        images.add(widget.productApiModel!.img);
+      if (widget.productApiModel!.img2 != null &&
+          widget.productApiModel!.img2!.isNotEmpty) {
         images.add(widget.productApiModel!.img2!);
       }
-      if (widget.productApiModel!.img3 != null && widget.productApiModel!.img3!.isNotEmpty) {
+      if (widget.productApiModel!.img3 != null &&
+          widget.productApiModel!.img3!.isNotEmpty) {
         images.add(widget.productApiModel!.img3!);
       }
-            print("🖼️ Ảnh từ ProductApiModel: $images");
+      print("🖼️ Ảnh từ ProductApiModel: $images");
       return images;
     } else {
       return widget.productModel.productImages;
-      
     }
-
-}
-
-
+  }
 
   @override
   void initState() {
@@ -105,8 +99,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     loadCustomerIdAndCheckFavorite();
     checkIfCanReview();
     fetchRelated();
- print("🖼️ Danh sách ảnh: ${widget.productModel.productImages}");
-
+    print("🖼️ Danh sách ảnh: ${widget.productModel.productImages}");
   }
 
   // Kiểm tra xem người dùng có thể đánh giá sản phẩm này không
@@ -135,34 +128,32 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   // Gửi đánh giá sản phẩm
   Future<void> submitReview() async {
-  final prefs = await SharedPreferences.getInstance();
-  final customerId = prefs.getInt('customerId');
-  if (customerId == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final customerId = prefs.getInt('customerId');
+    if (customerId == null) return;
 
-  final review = ReviewApiModel(
-    reviewId: 0,
-    customerId: customerId,
-    productId: int.tryParse(widget.productModel.productId) ?? 0,
-    comment: _feedbackController.text,
-    fullName: '', // Bạn có thể lấy tên đầy đủ từ thông tin người dùng nếu cần
-  );
-
-  final success = await ReviewService.createReview(review);
-
-  if (success) {
-    _feedbackController.clear();
-    await fetchProductReviews();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Gửi đánh giá thành công")),
+    final review = ReviewApiModel(
+      reviewId: 0,
+      customerId: customerId,
+      productId: int.tryParse(widget.productModel.productId) ?? 0,
+      comment: _feedbackController.text,
+      fullName: '', // Bạn có thể lấy tên đầy đủ từ thông tin người dùng nếu cần
     );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Gửi đánh giá thất bại")),
-    );
+
+    final success = await ReviewService.createReview(review);
+
+    if (success) {
+      _feedbackController.clear();
+      await fetchProductReviews();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Gửi đánh giá thành công")),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Gửi đánh giá thất bại")),
+      );
+    }
   }
-}
-
-
 
   Future<void> loadCustomerIdAndCheckFavorite() async {
     final prefs = await SharedPreferences.getInstance();
@@ -174,42 +165,39 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
-          Future<void> fetchRelated() async {
-                    if (widget.allProducts == null || widget.allProducts!.isEmpty) {
-                      print("⚠️ Không có danh sách sản phẩm để lọc.");
-                      return;
-                    }
+  Future<void> fetchRelated() async {
+    if (widget.allProducts == null || widget.allProducts!.isEmpty) {
+      print("⚠️ Không có danh sách sản phẩm để lọc.");
+      return;
+    }
 
-                    final currentCategory = widget.productModel.categoryName.trim().toLowerCase();
-                    final currentProductId = int.tryParse(widget.productModel.productId);
+    final currentCategory =
+        widget.productModel.categoryName.trim().toLowerCase();
+    final currentProductId = int.tryParse(widget.productModel.productId);
 
-                    if (currentProductId == null) {
-                      print("❌ Không thể phân tích productId hiện tại.");
-                      return;
-                    }
+    if (currentProductId == null) {
+      print("❌ Không thể phân tích productId hiện tại.");
+      return;
+    }
 
-                    final filtered = widget.allProducts!
-                        .where((p) =>
-                            p.categoryName.trim().toLowerCase() == currentCategory &&
-                            p.productId != currentProductId)
-                        .take(5)
-                        .toList();
+    final filtered = widget.allProducts!
+        .where((p) =>
+            p.categoryName.trim().toLowerCase() == currentCategory &&
+            p.productId != currentProductId)
+        .take(5)
+        .toList();
 
-                    print("📦 Sản phẩm liên quan lấy được (LOCAL): ${filtered.length}");
-                    for (var item in filtered) {
-                      print("🪴 ${item.productName} - ${item.img}");
-                    }
+    print("📦 Sản phẩm liên quan lấy được (LOCAL): ${filtered.length}");
+    for (var item in filtered) {
+      print("🪴 ${item.productName} - ${item.img}");
+    }
 
-                    setState(() {
-                      relatedProducts = filtered;
-                      print("✅ Đã cập nhật relatedProducts: ${relatedProducts.length}");
+    setState(() {
+      relatedProducts = filtered;
+      print("✅ Đã cập nhật relatedProducts: ${relatedProducts.length}");
+    });
+  }
 
-                    });
-                  }
-
-
-
-  
   Future<void> toggleFavorite() async {
     if (customerId == null) {
       Get.snackbar("Lỗi", "Vui lòng đăng nhập để sử dụng tính năng này");
@@ -272,7 +260,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         categoryName: widget.productModel.categoryName,
         salePrice: widget.productModel.salePrice,
         fullPrice: widget.productModel.fullPrice,
-        productImages: [widget.productModel.productImages],
+        productImages: widget.productModel.productImages, // ✅ ĐÚNG
         deliveryTime: widget.productModel.deliveryTime,
         isSale: widget.productModel.isSale,
         productDescription: widget.productModel.productDescription,
@@ -293,7 +281,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-  print('productReviews.length: ${productReviews.length}');
+    print('productReviews.length: ${productReviews.length}');
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -383,31 +371,35 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ],
                 ),
                 child: CarouselSlider(
-                  items: getAllProductImages().map(
-                    (imageUrl) => ClipRRect(
-                      borderRadius: BorderRadius.circular(20.0),
-                      child: CachedNetworkImage(
-                        imageUrl: '$BASE_URL/$imageUrl',
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Center(
-                            child: CircularProgressIndicator(color: Colors.green),
+                  items: getAllProductImages()
+                      .map(
+                        (imageUrl) => ClipRRect(
+                          borderRadius: BorderRadius.circular(20.0),
+                          child: CachedNetworkImage(
+                            imageUrl: '$BASE_URL/$imageUrl',
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                    color: Colors.green),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Icon(Icons.local_florist,
+                                  size: 60, color: Colors.green.shade300),
+                            ),
                           ),
                         ),
-                        errorWidget: (context, url, error) => Container(
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Icon(Icons.local_florist, size: 60, color: Colors.green.shade300),
-                        ),
-                      ),
-                    ),
-                  ).toList(),
+                      )
+                      .toList(),
                   options: CarouselOptions(
                     scrollDirection: Axis.horizontal,
                     autoPlay: true,
@@ -722,20 +714,24 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
                         itemCount: productReviews.length,
-                        separatorBuilder: (context, index) => SizedBox(height: 10),
+                        separatorBuilder: (context, index) =>
+                            SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final review = productReviews[index];
                           return Card(
                             elevation: 2,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                             child: ListTile(
                               leading: CircleAvatar(
                                 backgroundColor: Colors.green.shade100,
-                                child: Icon(Icons.person, color: Colors.green.shade700),
+                                child: Icon(Icons.person,
+                                    color: Colors.green.shade700),
                               ),
                               title: Text(
                                 review.comment,
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w500),
                               ),
                               subtitle: Text(
                                 "Tài Khoản: ${review.fullName}",
@@ -766,12 +762,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       const SizedBox(height: 12),
                       ElevatedButton(
                         onPressed: submitReview,
-                        child: const Text("Gửi đánh giá"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24, vertical: 12),
                         ),
+                        child: const Text("Gửi đánh giá"),
                       )
                     ] else if (!isCheckingReview) ...[
                       const Text(
@@ -808,28 +804,31 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               Navigator.push(
                                 context,
                                 PageRouteBuilder(
-                                  pageBuilder: (context, animation, secondaryAnimation) =>
+                                  pageBuilder: (context, animation,
+                                          secondaryAnimation) =>
                                       ProductDetailsScreen(
-                                        key: UniqueKey(),
-                                        productModel: ProductModel(
-                                          productId: product.productId.toString(),
-                                          productName: product.productName,
-                                          categoryId: product.categoryId.toString(),
-                                          categoryName: product.categoryName,
-                                          fullPrice: product.priceOutput.toString(),
-                                          salePrice: product.priceOutput.toString(),
-                                          isSale: false,
-                                          productDescription: product.description,
-                                          productImages: [product.img ?? ''],
-                                          deliveryTime: "2-3 ngày",
-                                          createdAt: null,
-                                          updatedAt: null,
-                                        ),
-                                        productApiModel: product,
-                                        allProducts: widget.allProducts,
-                                      ),
-                                  transitionDuration: Duration(milliseconds: 300),
-                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                    key: UniqueKey(),
+                                    productModel: ProductModel(
+                                      productId: product.productId.toString(),
+                                      productName: product.productName,
+                                      categoryId: product.categoryId.toString(),
+                                      categoryName: product.categoryName,
+                                      fullPrice: product.priceOutput.toString(),
+                                      salePrice: product.priceOutput.toString(),
+                                      isSale: false,
+                                      productDescription: product.description,
+                                      productImages: [product.img ?? ''],
+                                      deliveryTime: "2-3 ngày",
+                                      createdAt: null,
+                                      updatedAt: null,
+                                    ),
+                                    productApiModel: product,
+                                    allProducts: widget.allProducts,
+                                  ),
+                                  transitionDuration:
+                                      Duration(milliseconds: 300),
+                                  transitionsBuilder: (context, animation,
+                                      secondaryAnimation, child) {
                                     return FadeTransition(
                                       opacity: animation,
                                       child: child,
@@ -853,13 +852,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                       borderRadius: BorderRadius.vertical(
                                           top: Radius.circular(12)),
                                       child: CachedNetworkImage(
-                                        imageUrl: '$BASE_URL/${product.img ?? ''}',
+                                        imageUrl:
+                                            '$BASE_URL/${product.img ?? ''}',
                                         height: 120,
                                         width: double.infinity,
                                         fit: BoxFit.cover,
                                         placeholder: (_, __) => Container(
                                           color: Colors.green.shade50,
-                                          child: Center(child: CircularProgressIndicator()),
+                                          child: Center(
+                                              child:
+                                                  CircularProgressIndicator()),
                                         ),
                                         errorWidget: (_, __, ___) =>
                                             Icon(Icons.broken_image),
@@ -868,11 +870,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                     Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             product.productName,
-                                            style: TextStyle(fontWeight: FontWeight.bold),
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),

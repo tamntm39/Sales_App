@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chichanka_perfume/controllers/cart-controller.dart';
 import 'package:chichanka_perfume/controllers/cart-price-controller.dart';
 import 'package:chichanka_perfume/models/cart-model.dart';
@@ -230,18 +231,38 @@ class _CartScreenState extends State<CartScreen>
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Container(
+                      //   width: 80,
+                      //   height: 80,
+                      //   decoration: BoxDecoration(
+                      //     borderRadius: BorderRadius.circular(8),
+                      //     image: DecorationImage(
+                      //       image: NetworkImage(
+                      //           '$BASE_URL/${cartModel.productImages[0]}'),
+                      //       fit: BoxFit.cover,
+                      //     ),
+                      //   ),
+                      // ),
                       Container(
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
-                          image: DecorationImage(
-                            image: NetworkImage(
-                                '$BASE_URL/${cartModel.productImages[0]}'),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl:
+                                '$BASE_URL/${cartModel.productImages.isNotEmpty ? cartModel.productImages[0] : 'default.jpg'}',
                             fit: BoxFit.cover,
+                            placeholder: (context, url) =>
+                                const CircularProgressIndicator(),
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.error),
                           ),
                         ),
                       ),
+
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(

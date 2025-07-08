@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:chichanka_perfume/controllers/cart-controller.dart';
 import 'package:chichanka_perfume/screens/user-panel/all-brands-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/all-categories-screen.dart';
@@ -15,7 +13,6 @@ import 'package:chichanka_perfume/widgets/category-widget.dart';
 import 'package:chichanka_perfume/widgets/custom-drawer-widget.dart';
 import 'package:chichanka_perfume/widgets/flash-sale-widget.dart';
 import 'package:chichanka_perfume/widgets/heading-widget.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -340,26 +337,26 @@ class _MainScreenState extends State<MainScreen>
                       ],
                     ),
                   ),
-                  AnimatedContainer(
-                    duration: Duration(milliseconds: 500),
-                    curve: Curves.easeInOut,
-                    margin: EdgeInsets.symmetric(horizontal: 9),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: Colors.white,
-                    ),
-                    child: Column(
-                      children: [
-                        HeadingWidget(
-                          headingTitle: "Thương hiệu",
-                          headingSubTitle: "Các thương hiệu nước hoa tiêu biểu",
-                          onTap: () => Get.to(() => AllBrandsScreen()),
-                          buttonText: "Xem thêm >",
-                        ),
-                        const BrandWidget(),
-                      ],
-                    ),
-                  ),
+                  // AnimatedContainer(
+                  //   duration: Duration(milliseconds: 500),
+                  //   curve: Curves.easeInOut,
+                  //   margin: EdgeInsets.symmetric(horizontal: 9),
+                  //   decoration: BoxDecoration(
+                  //     borderRadius: BorderRadius.circular(16),
+                  //     color: Colors.white,
+                  //   ),
+                  //   child: Column(
+                  //     children: [
+                  //       HeadingWidget(
+                  //         headingTitle: "Thương hiệu",
+                  //         headingSubTitle: "Các thương hiệu nước hoa tiêu biểu",
+                  //         onTap: () => Get.to(() => AllBrandsScreen()),
+                  //         buttonText: "Xem thêm >",
+                  //       ),
+                  //       const BrandWidget(),
+                  //     ],
+                  //   ),
+                  // ),
                   AnimatedContainer(
                     duration: Duration(milliseconds: 500),
                     curve: Curves.easeInOut,
