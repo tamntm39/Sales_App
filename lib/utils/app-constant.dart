@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppConstant {
-  static String appMainName = 'Chichanka TreeStore';
-  static String appPoweredBy = 'Powered by Chichanka Garden';
+  static String appMainName = 'Lala garden';
 
   // Màu chủ đạo: Xanh lá
   static const Color appMainColor = Color(0xFF2E7D32); // primaryGreen

@@ -70,19 +70,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Lottie.asset('assets/images/splash-icon.json'),
               ),
             ),
-            Container(
-              margin: EdgeInsets.only(bottom: 20.0),
-              width: Get.width,
-              alignment: Alignment.center,
-              child: Text(
-                AppConstant.appPoweredBy,
-                style: TextStyle(
-                  color: AppConstant.appTextColor,
-                  fontSize: 12.0,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
           ],
         ),
       ),
