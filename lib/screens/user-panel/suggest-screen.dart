@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../models/product_api_model.dart';
 import '../../services/suggest-service.dart';
-import '../../utils/app-constant.dart';
 import 'product-details-screen.dart';
 import 'package:chichanka_perfume/models/product-model.dart';
 import 'package:chichanka_perfume/config.dart';

@@ -614,10 +614,15 @@ class AllProductsWidget extends StatelessWidget {
         itemBuilder: (context, index) {
           final product = displayProducts[index];
           return GestureDetector(
+            // ...existing code...
             onTap: () {
               final productModel = convertApiToProductModel(product);
-              Get.to(() => ProductDetailsScreen(productModel: productModel));
+              Get.to(() => ProductDetailsScreen(
+                    productModel: productModel,
+                    allProducts: products, // <-- thêm dòng này!
+                  ));
             },
+            // ...existing code...
             child: Container(
               width: 150,
               margin: const EdgeInsets.all(8),

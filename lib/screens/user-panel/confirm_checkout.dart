@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:chichanka_perfume/controllers/cart-price-controller.dart';
 import 'package:chichanka_perfume/models/cart-model.dart';
 import 'package:chichanka_perfume/services/order_service.dart';
 import 'package:chichanka_perfume/services/ghn_service.dart';
@@ -10,8 +9,6 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
-import 'package:app_links/app_links.dart';
 import 'package:chichanka_perfume/config.dart';
 import 'package:chichanka_perfume/models/address_model.dart';
 import 'package:flutter_paypal_payment/flutter_paypal_payment.dart';
@@ -342,7 +339,7 @@ void showCustomBottomSheet(List<CartModel> cartList) {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppConstant.appScendoryColor,
+                    backgroundColor: AppConstant.appMainColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:image_card/image_card.dart';
 import 'package:intl/intl.dart';
 
 class AllProductsWidget extends StatelessWidget {

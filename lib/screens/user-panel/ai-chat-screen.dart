@@ -40,8 +40,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      final aiMessage = data['candidates']?[0]?['content']?['parts']?[0]
-              ?['text'] ??
+      final aiMessage = data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
           'Không có phản hồi!';
       setState(() {
         _messages.add({'role': 'assistant', 'content': aiMessage});
@@ -66,10 +65,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
         padding: const EdgeInsets.all(14),
         constraints: const BoxConstraints(maxWidth: 300),
         decoration: BoxDecoration(
-          color: isUser
-              ? Colors.lightBlueAccent.withOpacity(0.8)
-              : Colors.blue.shade100, // AI chat màu xanh dương nhạt
-
+          color: isUser ? Colors.lightBlueAccent.withOpacity(0.8) : Colors.grey.shade300,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),

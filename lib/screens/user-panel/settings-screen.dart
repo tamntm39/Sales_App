@@ -395,7 +395,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: SizedBox(
         height: 70,
         child: Stack(
           children: [
@@ -530,7 +530,7 @@ extension UserModelExtension on UserModel {
     String? city,
   }) {
     return UserModel(
-      uId: this.uId,
+      uId: uId,
       username: username ?? this.username,
       email: email ?? this.email,
       phone: phone ?? this.phone,

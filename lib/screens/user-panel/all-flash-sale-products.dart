@@ -46,8 +46,8 @@ String formatPrice(num price) {
 
 // Hàm lấy dữ liệu từ API
 Future<List<SaleOffProduct>> fetchSaleOffProducts() async {
-  final response = await http.get(
-      Uri.parse('$BASE_URL/api/Product/GetSaleOffProducts'));
+  final response =
+      await http.get(Uri.parse('$BASE_URL/api/Product/GetSaleOffProducts'));
   if (response.statusCode == 200) {
     final jsonData = json.decode(response.body);
     if (jsonData['success'] == true && jsonData['data'] != null) {

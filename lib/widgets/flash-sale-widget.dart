@@ -84,7 +84,8 @@ class FlashSaleWidget extends StatelessWidget {
               final productModel = convertToProductModel(saleProduct);
 
               return GestureDetector(
-                onTap: () => Get.to(() => ProductDetailsScreen(productModel: productModel)),
+                onTap: () => Get.to(
+                    () => ProductDetailsScreen(productModel: productModel)),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 5.0),
                   child: ConstrainedBox(

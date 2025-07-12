@@ -8,10 +8,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:chichanka_perfume/models/product-model.dart';
-import 'package:image_card/image_card.dart';
 import 'package:intl/intl.dart';
 import 'package:chichanka_perfume/config.dart';
-
 
 class AllSingleCategoryProductsScreen extends StatelessWidget {
   final int categoryId;
@@ -87,8 +85,11 @@ class AllSingleCategoryProductsScreen extends StatelessWidget {
 
               return GestureDetector(
                 onTap: () {
-                  final productModel = convertApiToProductModel(product);
-                  Get.to(() => ProductDetailsScreen(productModel: productModel));
+                  Get.to(() => ProductDetailsScreen(
+                        productModel: convertApiToProductModel(product),
+                        allProducts:
+                            products, // truyền đúng kiểu List<ProductApiModel>
+                      ));
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -106,7 +107,8 @@ class AllSingleCategoryProductsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(12)),
                         child: AspectRatio(
                           aspectRatio: 1,
                           child: CachedNetworkImage(
@@ -122,7 +124,8 @@ class AllSingleCategoryProductsScreen extends StatelessWidget {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8.0, horizontal: 6.0),
                         child: Column(
                           children: [
                             Text(
@@ -160,12 +163,8 @@ class AllSingleCategoryProductsScreen extends StatelessWidget {
   }
 }
 
-
 extension ProductModelExtension on ProductModel {
   static ProductModel fromMap(Map<String, dynamic> data) {
-
-    
-    
     return ProductModel(
       productId: data['productId'],
       categoryId: data['categoryId'],
@@ -182,4 +181,3 @@ extension ProductModelExtension on ProductModel {
     );
   }
 }
-
