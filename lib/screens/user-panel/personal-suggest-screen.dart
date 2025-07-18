@@ -59,7 +59,7 @@ class _PersonalizedSuggestionsScreenState
           'Gợi ý sản phẩm',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color.fromARGB(255, 88, 209, 54),
+        backgroundColor:  Colors.green.shade700,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
