@@ -57,39 +57,36 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   int? customerId;
   final CartController cartController = Get.put(CartController());
 
-  
+              List<String> getAllProductImages() {
+                if (widget.productApiModel != null) {
+                print("🔍 img: ${widget.productApiModel!.img}");
+                print("🔍 img2: ${widget.productApiModel!.img2}");
+                print("🔍 img3: ${widget.productApiModel!.img3}");
+                  List<String> images = [];
+                  if (widget.productApiModel!.img.isNotEmpty) images.add(widget.productApiModel!.img);
+                  if (widget.productApiModel!.img2 != null && widget.productApiModel!.img2!.isNotEmpty)
+                    images.add(widget.productApiModel!.img2!);
+                  if (widget.productApiModel!.img3 != null && widget.productApiModel!.img3!.isNotEmpty)
+                    images.add(widget.productApiModel!.img3!);
+                        print("🖼️ Ảnh từ ProductApiModel: $images");
+                  return images;
+                } else {
+                  return widget.productModel.productImages;
+                  
+                }
 
-
-  List<String> getAllProductImages() {
-    if (widget.productApiModel != null) {
-    print("🔍 img: ${widget.productApiModel!.img}");
-    print("🔍 img2: ${widget.productApiModel!.img2}");
-    print("🔍 img3: ${widget.productApiModel!.img3}");
-      List<String> images = [];
-      if (widget.productApiModel!.img.isNotEmpty) images.add(widget.productApiModel!.img);
-      if (widget.productApiModel!.img2 != null && widget.productApiModel!.img2!.isNotEmpty)
-        images.add(widget.productApiModel!.img2!);
-      if (widget.productApiModel!.img3 != null && widget.productApiModel!.img3!.isNotEmpty)
-        images.add(widget.productApiModel!.img3!);
-            print("🖼️ Ảnh từ ProductApiModel: $images");
-      return images;
-    } else {
-      return widget.productModel.productImages;
-      
-    }
-
-}
+            }
 
 
 
-  @override
-  void initState() {
-    super.initState();
-    loadCustomerIdAndCheckFavorite();
-    fetchRelated();
- print("🖼️ Danh sách ảnh: ${widget.productModel.productImages}");
+              @override
+              void initState() {
+                super.initState();
+                loadCustomerIdAndCheckFavorite();
+                fetchRelated();
+            print("🖼️ Danh sách ảnh: ${widget.productModel.productImages}");
 
-  }
+              }
 
 
             Future<void> loadCustomerIdAndCheckFavorite() async {
