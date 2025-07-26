@@ -142,7 +142,7 @@ class _ContactScreenState extends State<ContactScreen>
           Icon(Icons.park, color: Colors.white, size: 24),
           const SizedBox(width: 8),
           const Text(
-            "Liên hệ TreeStore",
+            "Liên hệ LaLaGarden",
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -566,21 +566,7 @@ class _ContactScreenState extends State<ContactScreen>
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.eco, color: lightGreen, size: 20),
-              const SizedBox(width: 8),
-              const Text(
-                "TreeStore - Đồng hành cùng không gian xanh",
-                style: TextStyle(
-                  color: primaryGreen,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
+
           const SizedBox(height: 8),
           Text(
             "🌱 Mỗi cây cảnh là một câu chuyện, hãy để chúng tôi giúp bạn kể câu chuyện của riêng mình!",
