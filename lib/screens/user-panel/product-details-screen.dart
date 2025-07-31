@@ -18,6 +18,8 @@ import 'package:chichanka_perfume/services/order_service.dart';
 import 'package:chichanka_perfume/models/order_api_model.dart';
 import 'package:chichanka_perfume/models/review_api_model.dart';
 import 'package:chichanka_perfume/services/review_service.dart';
+import 'package:chichanka_perfume/widgets/quantity_selector_widget.dart';
+
 
 class ProductDetailsScreen extends StatefulWidget {
   final ProductModel productModel;
@@ -69,6 +71,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return "$BASE_URL/$url";
   }
 
+  // Thêm các biến cho quantity selector
+  int selectedQuantity = 1;
+  final int minQuantity = 1;
+  final int maxQuantity = 99;
+  double totalPrice = 0.0;
+
   List<String> getAllProductImages() {
     if (widget.productApiModel != null) {
       print("🔍 img: ${widget.productApiModel!.img}");
@@ -99,7 +107,70 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     loadCustomerIdAndCheckFavorite();
     checkIfCanReview();
     fetchRelated();
+    // Khởi tạo tổng giá
+    calculateTotalPrice();
     print("🖼️ Danh sách ảnh: ${widget.productModel.productImages}");
+  }
+
+  // Tính tổng giá dựa trên số lượng
+  void calculateTotalPrice() {
+    double unitPrice = double.parse(widget.productModel.isSale
+        ? widget.productModel.salePrice
+        : widget.productModel.fullPrice);
+    setState(() {
+      totalPrice = unitPrice * selectedQuantity;
+    });
+  }
+
+  // Tăng số lượng
+  void increaseQuantity() {
+    if (selectedQuantity < maxQuantity) {
+      setState(() {
+        selectedQuantity++;
+      });
+      calculateTotalPrice();
+    }
+  }
+
+  // Giảm số lượng
+  void decreaseQuantity() {
+    if (selectedQuantity > minQuantity) {
+      setState(() {
+        selectedQuantity--;
+      });
+      calculateTotalPrice();
+    }
+  }
+
+  // Xử lý thay đổi số lượng từ text input
+  void onQuantityChanged(String value) {
+    int? newQuantity = int.tryParse(value);
+    if (newQuantity != null) {
+      if (newQuantity >= minQuantity && newQuantity <= maxQuantity) {
+        setState(() {
+          selectedQuantity = newQuantity;
+        });
+        calculateTotalPrice();
+      } else if (newQuantity > maxQuantity) {
+        setState(() {
+          selectedQuantity = maxQuantity;
+        });
+        calculateTotalPrice();
+        Get.snackbar("Thông báo", "Số lượng tối đa là $maxQuantity");
+      } else if (newQuantity < minQuantity) {
+        setState(() {
+          selectedQuantity = minQuantity;
+        });
+        calculateTotalPrice();
+        Get.snackbar("Thông báo", "Số lượng tối thiểu là $minQuantity");
+      }
+    } else {
+      // Nếu input không hợp lệ, giữ nguyên số lượng hiện tại
+      setState(() {
+        selectedQuantity = minQuantity;
+      });
+      calculateTotalPrice();
+    }
   }
 
   // Kiểm tra xem người dùng có thể đánh giá sản phẩm này không
@@ -111,7 +182,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     final orders = await OrderService().getOrdersByCustomerId(customerId);
     setState(() {
       canReview = orders.any((order) =>
-          order.productId == int.tryParse(widget.productModel.productId));
+      order.productId == int.tryParse(widget.productModel.productId));
       isCheckingReview = false;
     });
   }
@@ -172,7 +243,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
 
     final currentCategory =
-        widget.productModel.categoryName.trim().toLowerCase();
+    widget.productModel.categoryName.trim().toLowerCase();
     final currentProductId = int.tryParse(widget.productModel.productId);
 
     if (currentProductId == null) {
@@ -182,8 +253,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
     final filtered = widget.allProducts!
         .where((p) =>
-            p.categoryName.trim().toLowerCase() == currentCategory &&
-            p.productId != currentProductId)
+    p.categoryName.trim().toLowerCase() == currentCategory &&
+        p.productId != currentProductId)
         .take(5)
         .toList();
 
@@ -236,6 +307,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return formatter.format(double.parse(price));
   }
 
+// Cập nhật hàm addToCartLocal để sử dụng selectedQuantity
   Future<void> addToCartLocal() async {
     final prefs = await SharedPreferences.getInstance();
     List<String> cartList = prefs.getStringList('cart') ?? [];
@@ -247,7 +319,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
     if (index != -1) {
       final map = jsonDecode(cartList[index]);
-      map['productQuantity'] += 1;
+      map['productQuantity'] += selectedQuantity; // Sử dụng selectedQuantity
       map['productTotalPrice'] =
           double.parse(map['fullPrice']) * map['productQuantity'];
       cartList[index] = jsonEncode(map);
@@ -260,25 +332,28 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         categoryName: widget.productModel.categoryName,
         salePrice: widget.productModel.salePrice,
         fullPrice: widget.productModel.fullPrice,
-        productImages: widget.productModel.productImages, // ✅ ĐÚNG
+        productImages: widget.productModel.productImages,
         deliveryTime: widget.productModel.deliveryTime,
         isSale: widget.productModel.isSale,
         productDescription: widget.productModel.productDescription,
         createdAt: DateTime.now().toIso8601String(),
         updatedAt: DateTime.now().toIso8601String(),
-        productQuantity: 1,
-        productTotalPrice: double.parse(widget.productModel.isSale
-            ? widget.productModel.salePrice
-            : widget.productModel.fullPrice),
+        productQuantity: selectedQuantity, // Sử dụng selectedQuantity
+        productTotalPrice: totalPrice, // Sử dụng totalPrice đã tính
       );
       cartList.add(jsonEncode(cartModel.toMap()));
-      Get.snackbar("Thành công", "Đã thêm cây vào giỏ hàng");
+      Get.snackbar("Thành công", "Đã thêm $selectedQuantity cây vào giỏ hàng");
     }
 
     await prefs.setStringList('cart', cartList);
     cartController.fetchCartItemCount();
-  }
 
+    // Reset quantity về 1 sau khi thêm vào giỏ hàng
+    setState(() {
+      selectedQuantity = 1;
+    });
+    calculateTotalPrice();
+  }
   @override
   Widget build(BuildContext context) {
     print('productReviews.length: ${productReviews.length}');
@@ -296,49 +371,49 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ),
         actions: [
           Obx(() => Stack(
-                children: [
-                  GestureDetector(
-                    onTap: () => Get.to(() => CartScreen()),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: AnimatedScale(
-                        scale: cartController.isAddingToCart.value ? 1.2 : 1.0,
-                        duration: Duration(milliseconds: 200),
-                        child: Icon(
-                          Icons.shopping_cart,
+            children: [
+              GestureDetector(
+                onTap: () => Get.to(() => CartScreen()),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: AnimatedScale(
+                    scale: cartController.isAddingToCart.value ? 1.2 : 1.0,
+                    duration: Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.shopping_cart,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              if (cartController.cartItemCount.value > 0)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(color: Colors.white, width: 1),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${cartController.cartItemCount.value}',
+                        style: TextStyle(
                           color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
-                  if (cartController.cartItemCount.value > 0)
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: AnimatedContainer(
-                        duration: Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        width: 18,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          color: Colors.orange,
-                          borderRadius: BorderRadius.circular(9),
-                          border: Border.all(color: Colors.white, width: 1),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '${cartController.cartItemCount.value}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              )),
+                ),
+            ],
+          )),
         ],
       ),
       body: Container(
@@ -374,31 +449,31 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   items: getAllProductImages()
                       .map(
                         (imageUrl) => ClipRRect(
-                          borderRadius: BorderRadius.circular(20.0),
-                          child: CachedNetworkImage(
-                            imageUrl: '$BASE_URL/$imageUrl',
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                    color: Colors.green),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Icon(Icons.local_florist,
-                                  size: 60, color: Colors.green.shade300),
-                            ),
+                      borderRadius: BorderRadius.circular(20.0),
+                      child: CachedNetworkImage(
+                        imageUrl: '$BASE_URL/$imageUrl',
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                                color: Colors.green),
                           ),
                         ),
-                      )
+                        errorWidget: (context, url, error) => Container(
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Icon(Icons.local_florist,
+                              size: 60, color: Colors.green.shade300),
+                        ),
+                      ),
+                    ),
+                  )
                       .toList(),
                   options: CarouselOptions(
                     scrollDirection: Axis.horizontal,
@@ -464,7 +539,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                         ? Icons.favorite
                                         : Icons.favorite_border,
                                     color:
-                                        isFavorite ? Colors.red : Colors.grey,
+                                    isFavorite ? Colors.red : Colors.grey,
                                     size: 28,
                                   ),
                                 ),
@@ -477,7 +552,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         // Giá
                         Container(
                           padding:
-                              EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
                             color: Colors.green.shade100,
                             borderRadius: BorderRadius.circular(12),
@@ -560,7 +635,19 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         ),
 
                         const SizedBox(height: 16),
+                        // Khung chọn số lượng - THÊM VÀO ĐÂY
+                        QuantitySelectorWidget(
+                          selectedQuantity: selectedQuantity,
+                          minQuantity: minQuantity,
+                          maxQuantity: maxQuantity,
+                          onIncrease: increaseQuantity,
+                          onDecrease: decreaseQuantity,
+                          onQuantityChanged: onQuantityChanged,
+                          totalPrice: totalPrice,
+                          formatPrice: formatPrice,
+                        ),
 
+                        const SizedBox(height: 16),
                         // Buttons
                         Row(
                           children: [
@@ -692,7 +779,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               // Đánh giá sản phẩm
               Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -805,28 +892,28 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 context,
                                 PageRouteBuilder(
                                   pageBuilder: (context, animation,
-                                          secondaryAnimation) =>
+                                      secondaryAnimation) =>
                                       ProductDetailsScreen(
-                                    key: UniqueKey(),
-                                    productModel: ProductModel(
-                                      productId: product.productId.toString(),
-                                      productName: product.productName,
-                                      categoryId: product.categoryId.toString(),
-                                      categoryName: product.categoryName,
-                                      fullPrice: product.priceOutput.toString(),
-                                      salePrice: product.priceOutput.toString(),
-                                      isSale: false,
-                                      productDescription: product.description,
-                                      productImages: [product.img ?? ''],
-                                      deliveryTime: "2-3 ngày",
-                                      createdAt: null,
-                                      updatedAt: null,
-                                    ),
-                                    productApiModel: product,
-                                    allProducts: widget.allProducts,
-                                  ),
+                                        key: UniqueKey(),
+                                        productModel: ProductModel(
+                                          productId: product.productId.toString(),
+                                          productName: product.productName,
+                                          categoryId: product.categoryId.toString(),
+                                          categoryName: product.categoryName,
+                                          fullPrice: product.priceOutput.toString(),
+                                          salePrice: product.priceOutput.toString(),
+                                          isSale: false,
+                                          productDescription: product.description,
+                                          productImages: [product.img ?? ''],
+                                          deliveryTime: "2-3 ngày",
+                                          createdAt: null,
+                                          updatedAt: null,
+                                        ),
+                                        productApiModel: product,
+                                        allProducts: widget.allProducts,
+                                      ),
                                   transitionDuration:
-                                      Duration(milliseconds: 300),
+                                  Duration(milliseconds: 300),
                                   transitionsBuilder: (context, animation,
                                       secondaryAnimation, child) {
                                     return FadeTransition(
@@ -853,7 +940,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                           top: Radius.circular(12)),
                                       child: CachedNetworkImage(
                                         imageUrl:
-                                            '$BASE_URL/${product.img ?? ''}',
+                                        '$BASE_URL/${product.img ?? ''}',
                                         height: 120,
                                         width: double.infinity,
                                         fit: BoxFit.cover,
@@ -861,7 +948,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                           color: Colors.green.shade50,
                                           child: Center(
                                               child:
-                                                  CircularProgressIndicator()),
+                                              CircularProgressIndicator()),
                                         ),
                                         errorWidget: (_, __, ___) =>
                                             Icon(Icons.broken_image),
@@ -871,7 +958,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                       padding: const EdgeInsets.all(8.0),
                                       child: Column(
                                         crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             product.productName,

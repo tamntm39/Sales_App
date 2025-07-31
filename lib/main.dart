@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
           foregroundColor: Colors.white,
           centerTitle: true,
         ),
-        textTheme: const TextTheme(
+        textTheme: TextTheme(
           bodyLarge: TextStyle(color: Colors.black87),
           bodyMedium: TextStyle(color: Colors.black87),
           titleLarge: TextStyle(
