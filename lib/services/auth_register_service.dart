@@ -1,9 +1,8 @@
-// ✅ Updated AuthRegisterService to match correct endpoint and parse Map<String, dynamic> properly
 import 'package:dio/dio.dart';
 
 class AuthRegisterService {
   final Dio _dio = Dio();
-  final String baseUrl = 'http://10.0.2.2:7072';
+  final String baseUrl = 'http://10.0.2.2:7072'; // API backend
 
   Future<Map<String, dynamic>> registerCustomer({
     required String fullName,
@@ -19,32 +18,46 @@ class AuthRegisterService {
         '$baseUrl/api/Customer/Register',
         data: {
           "FullName": fullName,
-          "phone": phone,
-          "address": address,
-          "email": email,
-          "username": username,
-          "password": password,
-          "image": image,
+          "Phone": phone,
+          "Address": address,
+          "Email": email,
+          "Username": username,
+          "Password": password,
+          "Image": image,
         },
         options: Options(
           headers: {'Content-Type': 'application/json'},
-          followRedirects: true,
+          followRedirects: false, 
           validateStatus: (status) => status != null && status < 500,
         ),
       );
 
-      // Ensure correct parsing of the response
-      if (response.data is Map<String, dynamic>) {
-        return Map<String, dynamic>.from(response.data);
+      // Xử lý kết quả trả về
+      if (response.statusCode == 200 && response.data is Map) {
+        final data = Map<String, dynamic>.from(response.data);
+
+        if (data['success'] == true) {
+          return {
+            "success": true,
+            "message": "Đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản."
+          };
+        } else {
+          return {
+            "success": false,
+            "message": data['message'] ?? "Đăng ký thất bại."
+          };
+        }
       } else {
         return {
           "success": false,
-          "message": "Phản hồi từ server không hợp lệ",
-          "raw": response.data.toString()
+          "message": "Lỗi kết nối server: ${response.statusCode}"
         };
       }
     } catch (e) {
-      return {"success": false, "message": e.toString()};
+      return {
+        "success": false,
+        "message": "Lỗi: ${e.toString()}"
+      };
     }
   }
 }
