@@ -3,24 +3,20 @@ import 'package:chichanka_perfume/screens/user-panel/product-details-screen.dart
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:image_card/image_card.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import '../../models/sale_off_product_model.dart'; // Model riêng cho sản phẩm sale
+import '../../models/sale_off_product_model.dart';
 import '../../utils/app-constant.dart';
 import 'package:chichanka_perfume/models/product-model.dart';
 import '../../config.dart';
 
 String getImageUrl(String img) {
-  // Đổi dấu \ thành /
   String path = img.replaceAll('\\', '/');
-  // Nối domain và port backend vào đường dẫn
-  return '$BASE_URL/$path'; // Đổi IP cho đúng backend của bạn
+  return '$BASE_URL/$path';
 }
 
-// Hàm chuyển SaleOffProduct (object) sang ProductModel
 ProductModel convertToProductModel(SaleOffProduct saleProduct) {
   return ProductModel(
     productId: saleProduct.productId.toString(),
@@ -38,16 +34,14 @@ ProductModel convertToProductModel(SaleOffProduct saleProduct) {
   );
 }
 
-// Hàm định dạng tiền tệ với dấu chấm và ký hiệu đ
 String formatPrice(num price) {
   final formatter = NumberFormat('#,###', 'vi_VN');
   return '${formatter.format(price)} đ';
 }
 
-// Hàm lấy dữ liệu từ API
 Future<List<SaleOffProduct>> fetchSaleOffProducts() async {
   final response =
-      await http.get(Uri.parse('$BASE_URL/api/Product/GetSaleOffProducts'));
+  await http.get(Uri.parse('$BASE_URL/api/Product/GetSaleOffProducts'));
   if (response.statusCode == 200) {
     final jsonData = json.decode(response.body);
     if (jsonData['success'] == true && jsonData['data'] != null) {
@@ -68,40 +62,111 @@ class AllFlashSaleProductScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: AppConstant.navy,
-        iconTheme: IconThemeData(color: AppConstant.appTextColor),
-        title: Text(
+        title: const Text(
           'Flash Sale - Khuyến Mãi',
-          style: TextStyle(color: AppConstant.appTextColor),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        backgroundColor: Colors.green[600],
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            child: Icon(
+              Icons.flash_on,
+              color: Colors.yellow[400],
+              size: 28,
+            ),
+          ),
+        ],
       ),
       body: FutureBuilder<List<SaleOffProduct>>(
         future: fetchSaleOffProducts(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return const Center(child: Text('Có lỗi xảy ra'));
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return SizedBox(
-              height: Get.height / 5,
-              child: const Center(child: CupertinoActivityIndicator()),
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 80,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Có lỗi xảy ra',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             );
           }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-                child: Text('Không tìm thấy sản phẩm khuyến mãi!'));
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CupertinoActivityIndicator(radius: 20),
+                  SizedBox(height: 16),
+                  Text(
+                    'Đang tải sản phẩm...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
+
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 80,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Không tìm thấy sản phẩm khuyến mãi!',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
           final products = snapshot.data!;
           return GridView.builder(
-            shrinkWrap: true,
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.all(10.0),
+            padding: const EdgeInsets.all(16.0),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 0.61,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 0.7,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
@@ -109,98 +174,189 @@ class AllFlashSaleProductScreen extends StatelessWidget {
               double discountPercent = product.priceOutput == 0
                   ? 0
                   : ((product.priceOutput - product.finalPrice) /
-                          product.priceOutput) *
-                      100;
+                  product.priceOutput) *
+                  100;
+
               return GestureDetector(
                 onTap: () => Get.to(() => ProductDetailsScreen(
-                      productModel: convertToProductModel(
-                          product), // product là item từ API
-                    )),
+                  productModel: convertToProductModel(product),
+                )),
                 child: Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey, width: 1.0),
-                    borderRadius: BorderRadius.circular(10.0),
+                    color: const Color(0xFFFFFFF8), // Màu trắng kem nhẹ
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  clipBehavior: Clip.hardEdge,
                   child: Stack(
                     children: [
                       Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Image section
+                          // Container cho hình ảnh
                           Expanded(
-                            child: FillImageCard(
-                              borderRadius: 10.0,
+                            flex: 3,
+                            child: Container(
                               width: double.infinity,
-                              heightImage: Get.height * 0.21,
-                              imageProvider: CachedNetworkImageProvider(
-                                  getImageUrl(product.img)),
+                              decoration: const BoxDecoration(
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(12),
+                                  topRight: Radius.circular(12),
+                                ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(12),
+                                  topRight: Radius.circular(12),
+                                ),
+                                child: CachedNetworkImage(
+                                  imageUrl: getImageUrl(product.img),
+                                  fit: BoxFit.cover,
+                                  errorWidget: (context, url, error) =>
+                                      Container(
+                                        color: Colors.grey[200],
+                                        child: const Icon(
+                                          Icons.image_not_supported,
+                                          color: Colors.grey,
+                                          size: 50,
+                                        ),
+                                      ),
+                                  placeholder: (context, url) => Container(
+                                    color: Colors.grey[200],
+                                    child: const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                          // Text section
-                          Container(
-                            padding: const EdgeInsets.only(
-                                top: 2.0, bottom: 5.5, left: 8.0, right: 8.0),
-                            color: Colors.white,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  product.name,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 2,
-                                  style: const TextStyle(
-                                    fontSize: 13.0,
-                                    fontWeight: FontWeight.bold,
+                          // Container cho thông tin sản phẩm
+                          Expanded(
+                            flex: 2,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    product.name,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                                const SizedBox(height: 5),
-                                Text(
-                                  formatPrice(product.priceOutput),
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    decoration: TextDecoration.lineThrough,
-                                    fontSize: 12,
+                                  const SizedBox(height: 8),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Giá gốc (gạch ngang)
+                                      Text(
+                                        formatPrice(product.priceOutput),
+                                        style: const TextStyle(
+                                          color: Colors.grey,
+                                          decoration: TextDecoration.lineThrough,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      // Giá khuyến mãi
+                                      Text(
+                                        formatPrice(product.finalPrice),
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                Text(
-                                  formatPrice(product.finalPrice),
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.red,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      // Discount badge
+                      // Badge giảm giá
                       Positioned(
-                        top: 5,
-                        right: 5,
+                        top: 8,
+                        right: 8,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(8),
+                            horizontal: 8,
+                            vertical: 4,
                           ),
-                          child: Text(
-                            '-${discountPercent.round()}%',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.red[600]!, Colors.red[400]!],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.red.withOpacity(0.3),
+                                spreadRadius: 1,
+                                blurRadius: 3,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.flash_on,
+                                color: Colors.white,
+                                size: 12,
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                '-${discountPercent.round()}%',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
+                      // Hot Sale indicator
+                      if (discountPercent >= 50)
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange[600],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'HOT',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -213,7 +369,7 @@ class AllFlashSaleProductScreen extends StatelessWidget {
   }
 }
 
-// Giả định ProductModel có phương thức fromMap
+// Extension cho ProductModel
 extension ProductModelExtension on ProductModel {
   static ProductModel fromMap(Map<String, dynamic> data) {
     return ProductModel(

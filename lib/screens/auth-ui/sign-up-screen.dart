@@ -14,6 +14,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final AuthRegisterService _registerService = AuthRegisterService();
+
   TextEditingController username = TextEditingController();
   TextEditingController userEmail = TextEditingController();
   TextEditingController userPhone = TextEditingController();
@@ -47,7 +48,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 children: [
                   SizedBox(height: Get.height / 20),
                   Text(
-                    "Chào mừng đến với Garden",
+                    "Chào mừng đến với LaLa Garden",
                     style: TextStyle(
                       color: AppConstant.navy,
                       fontWeight: FontWeight.bold,
@@ -71,7 +72,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     controller: userPhone,
                     hintText: "Số điện thoại",
                     icon: Icons.phone,
-                    keyboardType: TextInputType.number,
+                    keyboardType: TextInputType.phone,
                   ),
                   _buildTextField(
                     controller: userCity,
@@ -110,8 +111,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           prefixIcon: Icon(icon, color: AppConstant.navy),
           filled: true,
           fillColor: Colors.grey[100],
-          contentPadding:
-              EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
+          contentPadding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12.0),
             borderSide: BorderSide.none,
@@ -133,7 +133,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 10.0),
       child: Obx(
-        () => TextFormField(
+            () => TextFormField(
           controller: userPassword,
           obscureText: isPasswordVisible.value,
           cursorColor: AppConstant.navy,
@@ -144,16 +144,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
             suffixIcon: GestureDetector(
               onTap: () => isPasswordVisible.toggle(),
               child: Icon(
-                isPasswordVisible.value
-                    ? Icons.visibility_off
-                    : Icons.visibility,
+                isPasswordVisible.value ? Icons.visibility_off : Icons.visibility,
                 color: AppConstant.navy,
               ),
             ),
             filled: true,
             fillColor: Colors.grey[100],
-            contentPadding:
-                EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
+            contentPadding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.0),
               borderSide: BorderSide.none,
@@ -204,15 +201,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 colorText: AppConstant.appTextColor,
               );
             } else {
+              // Nếu chưa có ảnh thật, để chuỗi rỗng
+              String image = "";
+
               final result = await _registerService.registerCustomer(
                 fullName: name,
                 phone: phone,
                 address: city,
                 email: email,
-                username: name, // hoặc sử dụng tên đăng nhập khác nếu có
+                username: name,
                 password: password,
+                image: image,
               );
-              print(result);
+
               if (result['success'] == true) {
                 Get.snackbar(
                   "Đăng ký thành công",
