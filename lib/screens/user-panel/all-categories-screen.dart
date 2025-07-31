@@ -6,13 +6,12 @@ import 'package:chichanka_perfume/utils/app-constant.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:image_card/image_card.dart';
 import 'package:chichanka_perfume/models/category_api_model.dart';
 import 'package:chichanka_perfume/services/category_service.dart';
 import '../../config.dart';
 
 class AllCategoriesScreen extends StatefulWidget {
-  const AllCategoriesScreen({Key? key}) : super(key: key);
+  const AllCategoriesScreen({super.key});
 
   @override
   State<AllCategoriesScreen> createState() => _AllCategoriesScreenState();

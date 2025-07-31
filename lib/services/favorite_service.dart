@@ -36,7 +36,7 @@ class FavoriteService {
   // Thêm sản phẩm vào yêu thích
  Future<bool> addFavorite(int customerId, int productId) async {
   final response = await http.post(
-    Uri.parse('$_baseUrl'), // <-- Không có /AddFavorite
+    Uri.parse(_baseUrl), // <-- Không có /AddFavorite
     headers: {'Content-Type': 'application/json'},
     body: jsonEncode({'customerId': customerId, 'productId': productId}),
   );
@@ -50,7 +50,7 @@ class FavoriteService {
   // Xóa sản phẩm khỏi yêu thích
   Future<bool> removeFavorite(int customerId, int productId) async {
     final response = await http.delete(
-      Uri.parse('$_baseUrl'),
+      Uri.parse(_baseUrl),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'customerId': customerId, 'productId': productId}),
     );

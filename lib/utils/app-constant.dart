@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 
 class AppConstant {
-  static String appMainName = 'chichanka';
-  static String appPoweredBy = '';
-  static const appMainColor = Color.fromARGB(255, 66, 77, 93);
-  static const appScendoryColor = Color(0xFF981206);
-  static const appTextColor = Color(0xFFFBF5F4);
-  static const appStatusBarColor = Color(0xFFFBF5F4);
-  static const navy = Color.fromARGB(255, 19, 38, 91);
+  static String appMainName = 'Lala garden';
+
+  // Màu chủ đạo: Xanh lá
+  static const Color appMainColor = Color(0xFF2E7D32); // primaryGreen
+  static const Color appScendoryColor =
+      Color(0xFF81C784); // accentGreen (xanh nhạt)
+  static const Color appTextColor = Colors.white;
+  static const Color appStatusBarColor = Color(0xFF1B5E20); // darkGreen
+
+  // Đặt tên "navy" để tương thích mấy file cũ nhưng thật ra là xanh lá luôn
+  static const Color navy = appMainColor;
+
+  // Nếu cần thêm nữa:
+  static const Color lightGreen = Color(0xFF4CAF50);
+  static const Color darkGreen = Color(0xFF1B5E20);
+  static const Color accentGreen = Color(0xFF81C784);
 
   //stripe
   // static String appStripePublishableKey =

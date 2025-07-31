@@ -4,7 +4,6 @@ import 'package:chichanka_perfume/screens/user-panel/product-details-screen.dart
 import 'package:chichanka_perfume/utils/app-constant.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:image_card/image_card.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chichanka_perfume/services/favorite_service.dart';
@@ -41,7 +40,7 @@ class _FavouriteProductScreenState extends State<FavouriteProductScreen> {
         favoriteProducts = data.map<ProductModel>((e) => ProductModel(
           productId: e['productId'].toString(),
           productName: e['productName'] ?? '',
-          productImages: e['img'] ?? '',
+          productImages: [e['img'] ?? ''],
           fullPrice: e['priceOutput'].toString(),
           salePrice: e['priceOutput'].toString(),
           isSale: false,

@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 class OtpResetPasswordScreen extends StatefulWidget {
   final String email; // chỉ cần email thôi, không cần otp từ bên ngoài
 
-  const OtpResetPasswordScreen({Key? key, required this.email}) : super(key: key);
+  const OtpResetPasswordScreen({super.key, required this.email});
 
   @override
   _OtpResetPasswordScreenState createState() => _OtpResetPasswordScreenState();

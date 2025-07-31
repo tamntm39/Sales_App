@@ -7,7 +7,9 @@ class CartModel {
   final String categoryName;
   final String salePrice;
   final String fullPrice;
-  final List productImages;
+  // final List productImages;
+  final List<String> productImages;
+
   final String deliveryTime;
   final bool isSale;
   final String productDescription;
@@ -60,7 +62,9 @@ class CartModel {
       categoryName: json['categoryName'],
       salePrice: json['salePrice'],
       fullPrice: json['fullPrice'],
-      productImages: json['productImages'],
+      // productImages: json['productImages'],
+      productImages: List<String>.from(json['productImages'] ?? []),
+
       deliveryTime: json['deliveryTime'],
       isSale: json['isSale'],
       productDescription: json['productDescription'],

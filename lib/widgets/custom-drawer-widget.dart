@@ -1,278 +1,243 @@
-// widgets/drawer-widget.dart
 import 'package:chichanka_perfume/screens/user-panel/all-orders-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/all-products-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/contact-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/favorite-product-screen.dart';
+import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/personal-suggest-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/settings-screen.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/auth-ui/welcome-screen.dart';
 import '../models/user-model.dart';
+import '../services/customer/get_customer_service.dart';
 
-class DrawerWidget extends StatelessWidget {
+class DrawerWidget extends StatefulWidget {
   const DrawerWidget({super.key});
 
-  Future<UserModel?> _fetchUserData() async {
+  @override
+  State<DrawerWidget> createState() => _DrawerWidgetState();
+}
+
+class _DrawerWidgetState extends State<DrawerWidget> {
+  UserModel? _userModel;
+  // Thêm biến để theo dõi trạng thái tải dữ liệu
+  bool _isLoadingUserData = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    setState(() {
+      _isLoadingUserData = true; // Bắt đầu tải dữ liệu
+    });
     try {
-      User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        DocumentSnapshot doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .get();
-        if (doc.exists) {
-          return UserModel.fromMap(doc.data() as Map<String, dynamic>);
+      final prefs = await SharedPreferences.getInstance();
+      int? customerId = prefs.getInt('customerId');
+      if (customerId != null) {
+        final result = await GetCustomerService().getCustomer(customerId);
+        if (result['success']) {
+          final data = result['data'];
+          final imgUrl = data['image'];
+          final fullImgUrl = (imgUrl != null && imgUrl.startsWith('/'))
+              ? 'http://10.0.2.2:7072$imgUrl' // Chắc chắn đây là IP chính xác của backend
+              : imgUrl ?? ''; // Nếu đã là URL đầy đủ hoặc null/empty
+
+          setState(() {
+            _userModel = UserModel.fromMap({...data, 'userImg': fullImgUrl});
+          });
+          // Debugging prints (bạn có thể xóa sau khi kiểm tra xong)
+          print('DEBUG Drawer: customerId: $customerId');
+          print('DEBUG Drawer: imgUrl from backend: $imgUrl');
+          print('DEBUG Drawer: fullImgUrl: $fullImgUrl');
+          print('DEBUG Drawer: userModel username: ${_userModel?.username}');
+        } else {
+          // Xử lý trường hợp không thành công khi tải thông tin người dùng
+          print('DEBUG Drawer: Lỗi tải thông tin người dùng: ${result['message']}');
+          Get.snackbar("Lỗi", result['message'] ?? "Không thể tải thông tin người dùng",
+              backgroundColor: Colors.red, colorText: Colors.white);
         }
+      } else {
+print('DEBUG Drawer: customerId is null. User might not be logged in or data not saved.');
+        // Có thể xử lý nếu customerId là null (ví dụ: chuyển hướng đến màn hình đăng nhập)
       }
-      return null;
     } catch (e) {
-      return null;
+      print('DEBUG Drawer: Lỗi load user data: $e');
+      Get.snackbar("Lỗi", "Không thể tải thông tin người dùng",
+          backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      setState(() {
+        _isLoadingUserData = false; // Kết thúc tải dữ liệu
+      });
     }
   }
 
-  Future<List<String>> _fetchPersonalizedSuggestions() async {
+  // Hàm đăng xuất riêng biệt
+  Future<void> _logout() async {
     try {
-      User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        // Lấy lịch sử mua sắm từ Firestore
-        QuerySnapshot orderSnapshot = await FirebaseFirestore.instance
-            .collection('orders')
-            .where('userId', isEqualTo: currentUser.uid)
-            .get();
+      GoogleSignIn googleSignIn = GoogleSignIn();
+      FirebaseAuth auth = FirebaseAuth.instance;
 
-        List<String> scentPreferences = [];
-        for (var doc in orderSnapshot.docs) {
-          Map<String, dynamic> orderData = doc.data() as Map<String, dynamic>;
-          List<dynamic> products = orderData['products'] ?? [];
-          for (var product in products) {
-            scentPreferences.add(product['scentType'] ?? 'Unknown');
-          }
-        }
+      // Đăng xuất khỏi Firebase (nếu đã đăng nhập qua Firebase)
+      await auth.signOut();
+      // Đăng xuất khỏi Google (nếu đã đăng nhập qua Google)
+      await googleSignIn.signOut();
 
-        // Loại bỏ trùng lặp và trả về danh sách
-        return scentPreferences.isNotEmpty
-            ? scentPreferences.toSet().toList()
-            : ['Cây trong nhà', 'Cây ngoài trời', 'Cây văn phòng', 'Cây sen đá', 'Cây phong thủy']; // Mặc định nếu không có dữ liệu
-      }
-      return ['Cây trong nhà', 'Cây ngoài trời', 'Cây văn phòng', 'Cây sen đá', 'Cây phong thủy']; // Mặc định nếu không có người dùng
+      // Xóa customerId khỏi SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('customerId');
+      await prefs.remove('customerEmail');
+      await prefs.remove('customerPassword'); // Nếu bạn lưu password
+
+      // Chuyển hướng về màn hình chào mừng
+      Get.offAll(() => WelcomeScreen());
+      Get.snackbar("Thông báo", "Đã đăng xuất thành công!",
+          backgroundColor: AppConstant.appMainColor, colorText: Colors.white);
     } catch (e) {
-      print('Error fetching suggestions: $e');
-      return ['Cây trong nhà', 'Cây ngoài trời', 'Cây văn phòng', 'Cây sen đá', 'Cây phong thủy']; // Mặc định khi có lỗi
+      print("Lỗi khi đăng xuất: $e");
+      Get.snackbar("Lỗi", "Không thể đăng xuất. Vui lòng thử lại.",
+          backgroundColor: Colors.red, colorText: Colors.white);
     }
-  }
-
-  String _getInitials(String name) {
-    if (name.isEmpty) return "G";
-    List<String> nameParts = name.split(' ');
-    return nameParts
-        .map((part) => part.isNotEmpty ? part[0] : '')
-        .take(2)
-        .join()
-        .toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Hiển thị trạng thái tải hoặc thông tin người dùng
+    final avatarUrl = _userModel?.userImg ?? '';
+    final username = _userModel?.username ?? 'Đang tải...';
+    final email = _userModel?.email ?? 'Đang tải...';
+
     return Drawer(
       elevation: 8.0,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(right: Radius.circular(24)),
       ),
       backgroundColor: AppConstant.navy,
-      child: FutureBuilder<UserModel?>(
-        future: _fetchUserData(),
-        builder: (context, snapshot) {
-          String displayName = "Guest";
-          String initials = "G";
-
-          if (snapshot.connectionState == ConnectionState.done &&
-              snapshot.hasData) {
-            displayName = snapshot.data!.username;
-            initials = _getInitials(displayName);
-          }
-
-          return Column(
-            children: [
-              _buildHeader(context, displayName, initials),
-              const Divider(
-                indent: 16,
-                endIndent: 16,
-                thickness: 1,
-                color: Colors.grey,
-              ),
-              Expanded(
-                child: _buildMenuItems(context),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildHeader(
-      BuildContext context, String displayName, String initials) {
-    return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 32,
-        bottom: 24,
-        left: 20,
-        right: 20,
-      ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppConstant.appMainColor.withValues(alpha: 0.9),
-            AppConstant.navy,
-          ],
-        ),
-      ),
-      child: Row(
+      child: Column(
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.white.withValues(alpha: 0.2),
-            child: Text(
-              initials,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+          Container(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 32,
+              bottom: 24,
+              left: 20,
+              right: 20,
+            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppConstant.appMainColor.withOpacity(0.9),
+                  AppConstant.navy,
+                ],
               ),
             ),
+            child: Column(
+              children: [
+                Center(
+                  child: _isLoadingUserData
+                      ? const CircularProgressIndicator(color: Colors.white) // Hiển thị loading
+                      : CircleAvatar(
+radius: 40,
+                          // Sử dụng FadeInImage để xử lý tải ảnh tốt hơn
+                          backgroundImage: (avatarUrl.isNotEmpty && Uri.tryParse(avatarUrl)?.hasAbsolutePath == true)
+                              ? NetworkImage(avatarUrl) as ImageProvider
+                              : const AssetImage('assets/images/default_avatar.png'),
+                          onBackgroundImageError: (exception, stackTrace) {
+                            print('DEBUG Drawer: Lỗi tải ảnh đại diện từ URL: $avatarUrl');
+                            // Bạn có thể đặt một logic khác ở đây nếu muốn hiển thị ảnh lỗi cụ thể
+                          },
+                        ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _isLoadingUserData ? 'Đang tải...' : username,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  _isLoadingUserData ? '' : email, // Không hiển thị email khi đang tải
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                displayName,
-                style: TextStyle(
-                  color: AppConstant.appTextColor,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                "Version 1.0.1",
-                style: TextStyle(
-                  color: AppConstant.appTextColor.withValues(alpha: 0.7),
-                  fontSize: 14,
-                ),
-              ),
-            ],
+          const Divider(
+            indent: 16,
+            endIndent: 16,
+            thickness: 1,
+            color: Colors.grey,
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              children: [
+                _buildMenuItem("Trang chủ", Icons.home, () {
+                  Get.back(); // Đóng Drawer
+                  if (Get.currentRoute != '/MainScreen') { // Kiểm tra để tránh push lại chính nó
+                    Get.to(() => const MainScreen());
+                  }
+                }),
+                _buildMenuItem("Sản phẩm", Icons.production_quantity_limits, () {
+                  Get.back();
+                  if (Get.currentRoute != '/AllProductsScreen') {
+                    Get.to(() => const AllProductsScreen());
+                  }
+                }),
+                _buildMenuItem("Sản phẩm yêu thích", Icons.favorite, () {
+                  Get.back();
+                  if (Get.currentRoute != '/FavouriteProductScreen') {
+                    Get.to(() => const FavouriteProductScreen());
+                  }
+                }),
+                _buildMenuItem("Đơn hàng", Icons.shopping_bag, () {
+                  Get.back();
+                  if (Get.currentRoute != '/AllOrdersScreen') {
+                    Get.to(() => const AllOrdersScreen());
+                  }
+                }),
+                _buildMenuItem("Gợi ý sản phẩm", Icons.recommend, () {
+                  Get.back();
+if (Get.currentRoute != '/PersonalizedSuggestionsScreen') {
+                    Get.to(() => const PersonalizedSuggestionsScreen());
+                  }
+                }),
+                _buildMenuItem("Liên hệ", Icons.help, () {
+                  Get.back();
+                  if (Get.currentRoute != '/ContactScreen') {
+                    Get.to(() => const ContactScreen());
+                  }
+                }),
+                _buildMenuItem("Cài đặt", Icons.settings, () {
+                  Get.back();
+                  if (Get.currentRoute != '/SettingsScreen') {
+                    Get.to(() => const SettingsScreen());
+                  }
+                }),
+                const SizedBox(height: 16),
+                _buildMenuItem("Đăng xuất", Icons.logout, _logout, isLogout: true),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMenuItems(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      children: [
-        _buildMenuItem(
-          context: context,
-          title: "Trang chủ",
-          icon: Icons.home,
-          textColor: Colors.black,
-        ),
-        _buildMenuItem(
-          context: context,
-          title: "Sản phẩm",
-          icon: Icons.production_quantity_limits,
-          textColor: Colors.black,
-          onTap: () {
-            Get.back();
-            Get.to(() => const AllProductsScreen());
-          },
-        ),
-        _buildMenuItem(
-          context: context,
-          title: "Sản phẩm yêu thích",
-          icon: Icons.favorite,
-          textColor: Colors.black,
-          onTap: () {
-            Get.back();
-            Get.to(() => const FavouriteProductScreen());
-          },
-        ),
-        _buildMenuItem(
-          context: context,
-          title: "Đơn hàng",
-          icon: Icons.shopping_bag,
-          textColor: Colors.black,
-          onTap: () {
-            Get.back();
-            Get.to(() => const AllOrdersScreen());
-          },
-        ),
-        _buildMenuItem(
-          context: context,
-          title: "Gợi ý sản phẩm",
-          icon: Icons.recommend,
-          textColor: Colors.black,
-          onTap: () async {
-            Get.back();
-            List<String> suggestions = await _fetchPersonalizedSuggestions();
-            Get.to(
-                // () => PersonalizedSuggestionsScreen(suggestions: suggestions));
-                () => const PersonalizedSuggestionsScreen());
-          },
-        ),
-        _buildMenuItem(
-          context: context,
-          title: "Liên hệ",
-          icon: Icons.help,
-          textColor: Colors.black,
-          onTap: () {
-            Get.back();
-            Get.to(() => const ContactScreen());
-          },
-        ),
-        _buildMenuItem(
-          context: context,
-          title: "Cài đặt",
-          icon: Icons.settings,
-          textColor: Colors.black,
-          onTap: () {
-            Get.back();
-            Get.to(() => SettingsScreen());
-          },
-        ),
-        const SizedBox(height: 16),
-        _buildMenuItem(
-          context: context,
-          title: "Đăng xuất",
-          icon: Icons.logout,
-          onTap: () async {
-            GoogleSignIn googleSignIn = GoogleSignIn();
-            FirebaseAuth auth = FirebaseAuth.instance;
-            await auth.signOut();
-            await googleSignIn.signOut();
-            Get.offAll(() => WelcomeScreen());
-          },
-          isLogout: true,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMenuItem({
-    required BuildContext context,
-    required String title,
-    required IconData icon,
-    VoidCallback? onTap,
-    bool isLogout = false,
-    Color? textColor,
-  }) {
+  Widget _buildMenuItem(String title, IconData icon, VoidCallback onTap,
+      {bool isLogout = false}) {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 8),
@@ -289,8 +254,7 @@ class DrawerWidget extends StatelessWidget {
         title: Text(
           title,
           style: TextStyle(
-            color:
-                isLogout ? Colors.red : (textColor ?? AppConstant.appTextColor),
+            color: isLogout ? Colors.red : Colors.black,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -298,12 +262,9 @@ class DrawerWidget extends StatelessWidget {
         trailing: Icon(
           Icons.arrow_forward_ios,
           size: 16,
-          color: isLogout ? Colors.red : AppConstant.appTextColor,
+          color: isLogout ? Colors.red : Colors.black,
         ),
-        tileColor: Colors.white.withValues(alpha: 0.9),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        tileColor: Colors.white.withOpacity(0.95),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       ),
     );

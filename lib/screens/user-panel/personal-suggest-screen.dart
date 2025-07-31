@@ -4,7 +4,6 @@ import '../../models/category_api_model.dart';
 import '../../models/product_api_model.dart';
 import '../../services/category_service.dart';
 import '../../services/suggest-service.dart';
-import '../../utils/app-constant.dart';
 import 'suggest-screen.dart';
 
 class PersonalizedSuggestionsScreen extends StatefulWidget {
@@ -33,8 +32,9 @@ class _PersonalizedSuggestionsScreenState
       final Map<int, ProductApiModel?> productMap = {};
 
       for (final category in fetchedCategories) {
-        final products = await SuggestionProductService.fetchProductsByCategoryId(
-            category.categoryId);
+        final products =
+            await SuggestionProductService.fetchProductsByCategoryId(
+                category.categoryId);
         productMap[category.categoryId] =
             products.isNotEmpty ? products.first : null;
       }
@@ -59,7 +59,7 @@ class _PersonalizedSuggestionsScreenState
           'Gợi ý sản phẩm',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color.fromARGB(255, 88, 209, 54),
+        backgroundColor:  Colors.green.shade700,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -90,4 +90,3 @@ class _PersonalizedSuggestionsScreenState
     );
   }
 }
-

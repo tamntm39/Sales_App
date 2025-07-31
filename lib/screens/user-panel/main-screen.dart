@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:chichanka_perfume/controllers/cart-controller.dart';
 import 'package:chichanka_perfume/screens/user-panel/all-brands-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/all-categories-screen.dart';
@@ -15,7 +13,6 @@ import 'package:chichanka_perfume/widgets/category-widget.dart';
 import 'package:chichanka_perfume/widgets/custom-drawer-widget.dart';
 import 'package:chichanka_perfume/widgets/flash-sale-widget.dart';
 import 'package:chichanka_perfume/widgets/heading-widget.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -24,7 +21,7 @@ import 'package:image_card/image_card.dart';
 import 'package:intl/intl.dart';
 import 'package:chichanka_perfume/models/product_api_model.dart';
 import 'package:chichanka_perfume/services/product_service.dart';
-import '../../config.dart'; 
+import '../../config.dart';
 import 'package:chichanka_perfume/screens/user-panel/ai-chat-screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -59,18 +56,6 @@ class _MainScreenState extends State<MainScreen>
     fetchProducts();
   }
 
-  List<ProductApiModel> getRelatedProducts(String categoryName, int productId) {
-  return allProducts
-      .where((p) =>
-          p.categoryName.trim().toLowerCase() ==
-              categoryName.trim().toLowerCase() &&
-          p.productId != productId)
-      .take(5)
-      .toList();
-}
-
-
-
   Future<void> fetchProducts() async {
     setState(() {
       isLoadingProducts = true;
@@ -89,7 +74,6 @@ class _MainScreenState extends State<MainScreen>
       });
     }
   }
-
 
   void addToRecentlyViewed(ProductApiModel product) {
     setState(() {
@@ -135,10 +119,10 @@ class _MainScreenState extends State<MainScreen>
           statusBarIconBrightness: Brightness.light,
         ),
         title: Padding(
-          padding: const EdgeInsets.only(top: 20.0),
+          padding: const EdgeInsets.only(top: 4.0), // Giảm padding lại cho gọn
           child: Image.asset(
-            'assets/images/chichanka_logo.png',
-            height: 100,
+            'assets/images/lala-logo.png',
+            height: 48, // CHỈNH CHỖ NÀY: từ 100 xuống còn 48
             fit: BoxFit.contain,
           ),
         ),
@@ -270,7 +254,7 @@ class _MainScreenState extends State<MainScreen>
                             width: double.infinity,
                             heightImage: Get.height / 5,
                             imageProvider: CachedNetworkImageProvider(
-                              '$BASE_URL/' + productModel.img,
+                              '$BASE_URL/${productModel.img}',
                             ),
                             title: Center(
                               child: Text(
@@ -353,26 +337,26 @@ class _MainScreenState extends State<MainScreen>
                       ],
                     ),
                   ),
-                  AnimatedContainer(
-                    duration: Duration(milliseconds: 500),
-                    curve: Curves.easeInOut,
-                    margin: EdgeInsets.symmetric(horizontal: 9),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: Colors.white,
-                    ),
-                    child: Column(
-                      children: [
-                        HeadingWidget(
-                          headingTitle: "Thương hiệu",
-                          headingSubTitle: "Các thương hiệu nước hoa tiêu biểu",
-                          onTap: () => Get.to(() => AllBrandsScreen()),
-                          buttonText: "Xem thêm >",
-                        ),
-                        const BrandWidget(),
-                      ],
-                    ),
-                  ),
+                  // AnimatedContainer(
+                  //   duration: Duration(milliseconds: 500),
+                  //   curve: Curves.easeInOut,
+                  //   margin: EdgeInsets.symmetric(horizontal: 9),
+                  //   decoration: BoxDecoration(
+                  //     borderRadius: BorderRadius.circular(16),
+                  //     color: Colors.white,
+                  //   ),
+                  //   child: Column(
+                  //     children: [
+                  //       HeadingWidget(
+                  //         headingTitle: "Thương hiệu",
+                  //         headingSubTitle: "Các thương hiệu nước hoa tiêu biểu",
+                  //         onTap: () => Get.to(() => AllBrandsScreen()),
+                  //         buttonText: "Xem thêm >",
+                  //       ),
+                  //       const BrandWidget(),
+                  //     ],
+                  //   ),
+                  // ),
                   AnimatedContainer(
                     duration: Duration(milliseconds: 500),
                     curve: Curves.easeInOut,
@@ -421,9 +405,7 @@ class _MainScreenState extends State<MainScreen>
                           AllProductsWidget(
                             addToRecentlyViewed: addToRecentlyViewed,
                             products: allProducts,
-                            allProducts: allProducts,
                           ),
-                        
                         ],
                       ),
                     ),
@@ -458,7 +440,7 @@ class _MainScreenState extends State<MainScreen>
           ],
         ),
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: SizedBox(
         height: 70,
         child: Stack(
           children: [
@@ -468,7 +450,7 @@ class _MainScreenState extends State<MainScreen>
               right: 0,
               child: CustomPaint(
                 size: Size(double.infinity, 70),
-                painter: BottomNavPainter(selectedIndex: _selectedIndex),
+                painter: BottomNavPainter(),
               ),
             ),
             Row(
@@ -515,7 +497,6 @@ class _MainScreenState extends State<MainScreen>
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.smart_toy),
         backgroundColor: Colors.green,
         onPressed: () {
           // Mở màn hình Chat AI
@@ -525,6 +506,7 @@ class _MainScreenState extends State<MainScreen>
           // Nếu dùng GetX:
           // Get.to(() => const AiChatScreen());
         },
+        child: const Icon(Icons.smart_toy),
       ),
     );
   }
@@ -607,11 +589,11 @@ class _MainScreenState extends State<MainScreen>
 class AllProductsWidget extends StatelessWidget {
   final Function(ProductApiModel) addToRecentlyViewed;
   final List<ProductApiModel> products;
-  final List<ProductApiModel> allProducts;
+
   const AllProductsWidget({
+    super.key,
     required this.addToRecentlyViewed,
     required this.products,
-     required this.allProducts,
   });
 
   @override
@@ -624,7 +606,7 @@ class AllProductsWidget extends StatelessWidget {
       return const Center(child: Text('Không có sản phẩm nào.'));
     }
 
-    return Container(
+    return SizedBox(
       height: 300,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -632,10 +614,15 @@ class AllProductsWidget extends StatelessWidget {
         itemBuilder: (context, index) {
           final product = displayProducts[index];
           return GestureDetector(
+            // ...existing code...
             onTap: () {
               final productModel = convertApiToProductModel(product);
-              Get.to(() => ProductDetailsScreen(productModel: productModel,productApiModel: product, allProducts: allProducts,));
+              Get.to(() => ProductDetailsScreen(
+                    productModel: productModel,
+                    allProducts: products, // <-- thêm dòng này!
+                  ));
             },
+            // ...existing code...
             child: Container(
               width: 150,
               margin: const EdgeInsets.all(8),
@@ -652,7 +639,7 @@ class AllProductsWidget extends StatelessWidget {
                       ),
                       child: Image(
                         image: CachedNetworkImageProvider(
-                            '$BASE_URL/' + product.img),
+                            '$BASE_URL/${product.img}'),
                         height: 150,
                         width: 150,
                         fit: BoxFit.cover,
@@ -700,11 +687,11 @@ class AllProductsWidget extends StatelessWidget {
 class RecentProductsWidget extends StatelessWidget {
   final List<ProductApiModel> recentlyViewedProducts;
 
-  const RecentProductsWidget({required this.recentlyViewedProducts});
+  const RecentProductsWidget({super.key, required this.recentlyViewedProducts});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 300,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -736,7 +723,7 @@ class RecentProductsWidget extends StatelessWidget {
                       ),
                       child: Image(
                         image: CachedNetworkImageProvider(
-                            '$BASE_URL/' + product.img),
+                            '$BASE_URL/${product.img}'),
                         height: 150,
                         width: 150,
                         fit: BoxFit.cover,
@@ -775,10 +762,6 @@ class RecentProductsWidget extends StatelessWidget {
 }
 
 class BottomNavPainter extends CustomPainter {
-  final int selectedIndex;
-
-  BottomNavPainter({required this.selectedIndex});
-
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
@@ -786,42 +769,15 @@ class BottomNavPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     Path path = Path();
-    double width = size.width;
-    double height = size.height;
-    double itemWidth = width / 3;
-    double circleRadius = 30;
-    double circleCenterX = itemWidth * selectedIndex + itemWidth / 2;
-
     path.moveTo(0, 0);
-    path.lineTo(circleCenterX - circleRadius, 0);
-    path.quadraticBezierTo(
-      circleCenterX - circleRadius / 2,
-      0,
-      circleCenterX - circleRadius / 2,
-      circleRadius / 2,
-    );
-    path.quadraticBezierTo(
-      circleCenterX,
-      circleRadius * 1.5,
-      circleCenterX + circleRadius / 2,
-      circleRadius / 2,
-    );
-    path.quadraticBezierTo(
-      circleCenterX + circleRadius / 2,
-      0,
-      circleCenterX + circleRadius,
-      0,
-    );
-    path.lineTo(width, 0);
-    path.lineTo(width, height);
-    path.lineTo(0, height);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
     path.close();
 
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
-

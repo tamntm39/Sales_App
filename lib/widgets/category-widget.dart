@@ -1,7 +1,6 @@
 // ignore_for_file: file_names, prefer_const_constructors, avoid_unnecessary_containers, sized_box_for_whitespace, prefer_const_literals_to_create_immutables
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chichanka_perfume/models/categories-model.dart';
 import 'package:chichanka_perfume/screens/user-panel/single-category-products-screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';

@@ -5,11 +5,9 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../models/product_api_model.dart';
 import '../../services/suggest-service.dart';
-import '../../utils/app-constant.dart';
 import 'product-details-screen.dart';
 import 'package:chichanka_perfume/models/product-model.dart';
-import 'package:chichanka_perfume/config.dart';  
-
+import 'package:chichanka_perfume/config.dart';
 
 class SuggestionsScreen extends StatefulWidget {
   final int selectedCategory;
@@ -35,8 +33,9 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
 
   Future<void> fetchSuggestions() async {
     try {
-      final fetchedProducts = await SuggestionProductService.fetchProductsByCategoryId(
-          widget.selectedCategory);
+      final fetchedProducts =
+          await SuggestionProductService.fetchProductsByCategoryId(
+              widget.selectedCategory);
       setState(() {
         products = fetchedProducts;
         isLoading = false;
@@ -53,7 +52,10 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gợi ý sản phẩm',style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
+        title: const Text(
+          'Gợi ý sản phẩm',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: const Color.fromARGB(255, 88, 209, 54),
       ),
       body: isLoading
@@ -143,17 +145,17 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
     );
   }
 }
+
 ProductModel convertApiToProductModel(ProductApiModel apiModel) {
+  String normalize(String? p) => p?.replaceAll(r'\', '/') ?? '';
 
-   String normalize(String? p) => p?.replaceAll(r'\', '/') ?? '';
-
-  final rawImg  = normalize(apiModel.img);
+  final rawImg = normalize(apiModel.img);
   final rawImg2 = normalize(apiModel.img2);
   final rawImg3 = normalize(apiModel.img3);
 
   // Gom list ảnh cho carousel
   final images = <String>[];
-  if (rawImg .isNotEmpty) images.add(rawImg);
+  if (rawImg.isNotEmpty) images.add(rawImg);
   if (rawImg2.isNotEmpty) images.add(rawImg2);
   if (rawImg3.isNotEmpty) images.add(rawImg3);
   return ProductModel(
@@ -163,8 +165,8 @@ ProductModel convertApiToProductModel(ProductApiModel apiModel) {
     fullPrice: apiModel.priceOutput.toString(),
     salePrice: apiModel.priceOutput.toString(),
     isSale: false,
-    categoryId: apiModel.categoryId?.toString() ?? '',
-    categoryName: apiModel.categoryName?.toString() ?? '',
+    categoryId: apiModel.categoryId.toString() ?? '',
+    categoryName: apiModel.categoryName.toString() ?? '',
     productDescription: apiModel.description ?? '', // dùng đúng tên trường
     deliveryTime: '',
     createdAt: DateTime.now(),

@@ -8,7 +8,7 @@ class AuthService {
 
     print('⚠️ Email gửi: "${email.trim()}"');
     print('⚠️ Email viết thường: "${email.trim().toLowerCase()}"');
-    print('⚠️ Password: "${password}"');
+    print('⚠️ Password: "$password"');
 
       final response = await _dio.post(
         '$baseUrl/Login', // Đúng endpoint: /api/Customer/Login

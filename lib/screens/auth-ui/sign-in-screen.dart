@@ -1,11 +1,9 @@
 import 'package:chichanka_perfume/controllers/get-user-data-controller.dart';
 import 'package:chichanka_perfume/controllers/sign-in-controller.dart';
-import 'package:chichanka_perfume/screens/admin-panel/admin-main-screen.dart';
 import 'package:chichanka_perfume/screens/auth-ui/forget-password-screen.dart';
 import 'package:chichanka_perfume/screens/auth-ui/sign-up-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
@@ -38,13 +36,10 @@ class _SigninScreenState extends State<SignInScreen> {
           appBar: AppBar(
             backgroundColor: AppConstant.navy,
             centerTitle: true,
-            iconTheme: IconThemeData(color: Colors.white),
+            iconTheme: const IconThemeData(color: Colors.white),
             leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                // Luôn quay về Welcome
-                Get.offAll(() => WelcomeScreen());
-              },
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Get.offAll(() => WelcomeScreen()),
             ),
             title: Text(
               'ĐĂNG NHẬP',
@@ -55,24 +50,23 @@ class _SigninScreenState extends State<SignInScreen> {
             ),
           ),
           body: SingleChildScrollView(
-            physics: BouncingScrollPhysics(),
+            physics: const BouncingScrollPhysics(),
             child: Column(
               children: [
                 isKeyboardVisible
-                    ? Text("Chào mừng bạn")
+                    ? const SizedBox()
                     : Column(
                         children: [
                           Lottie.asset(
                             'assets/images/splash-icon.json',
-                            width: Get.width, // Chiếm toàn bộ chiều rộng
-                            fit: BoxFit.cover, // Đảm bảo trải rộng
+                            width: Get.width,
+                            fit: BoxFit.cover,
                           ),
                         ],
                       ),
                 SizedBox(height: Get.height / 20),
                 Container(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 20.0), // Padding cho các phần còn lại
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: Column(
                     children: [
                       _buildTextField(
@@ -83,7 +77,7 @@ class _SigninScreenState extends State<SignInScreen> {
                       ),
                       _buildPasswordField(),
                       Container(
-                        margin: EdgeInsets.symmetric(horizontal: 10.0),
+                        margin: const EdgeInsets.symmetric(horizontal: 10.0),
                         alignment: Alignment.centerRight,
                         child: GestureDetector(
                           onTap: () => Get.to(() => ForgetPasswordScreen()),
@@ -130,7 +124,6 @@ class _SigninScreenState extends State<SignInScreen> {
     );
   }
 
-  // Hàm tạo TextField tùy chỉnh cho Email
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
@@ -138,7 +131,7 @@ class _SigninScreenState extends State<SignInScreen> {
     required TextInputType keyboardType,
   }) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 10.0),
+      margin: const EdgeInsets.symmetric(vertical: 10.0),
       child: TextFormField(
         controller: controller,
         cursorColor: AppConstant.navy,
@@ -149,7 +142,7 @@ class _SigninScreenState extends State<SignInScreen> {
           filled: true,
           fillColor: Colors.grey[100],
           contentPadding:
-              EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
+              const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12.0),
             borderSide: BorderSide.none,
@@ -167,10 +160,9 @@ class _SigninScreenState extends State<SignInScreen> {
     );
   }
 
-  // Hàm tạo trường Mật khẩu
   Widget _buildPasswordField() {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 10.0),
+      margin: const EdgeInsets.symmetric(vertical: 10.0),
       child: Obx(
         () => TextFormField(
           controller: userPassword,
@@ -192,7 +184,7 @@ class _SigninScreenState extends State<SignInScreen> {
             filled: true,
             fillColor: Colors.grey[100],
             contentPadding:
-                EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
+                const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.0),
               borderSide: BorderSide.none,
@@ -211,7 +203,6 @@ class _SigninScreenState extends State<SignInScreen> {
     );
   }
 
-  // Hàm tạo nút Đăng Nhập với hiệu ứng đổ bóng
   Widget _buildSignInButton() {
     return Material(
       elevation: 5,
@@ -220,7 +211,6 @@ class _SigninScreenState extends State<SignInScreen> {
         width: Get.width / 2,
         height: Get.height / 16,
         decoration: BoxDecoration(
-          color: AppConstant.navy,
           borderRadius: BorderRadius.circular(25.0),
           gradient: LinearGradient(
             colors: [AppConstant.navy, AppConstant.navy.withOpacity(0.8)],
@@ -232,7 +222,6 @@ class _SigninScreenState extends State<SignInScreen> {
           onPressed: () async {
             String email = userEmail.text.trim();
             String password = userPassword.text.trim();
-        
 
             if (email.isEmpty || password.isEmpty) {
               Get.snackbar(
@@ -243,19 +232,15 @@ class _SigninScreenState extends State<SignInScreen> {
                 colorText: AppConstant.appTextColor,
               );
             } else {
-              // Gọi API đăng nhập
-              final result = await _authService.login(
-                  email, password);
-              print(result); // In log để kiểm tra response
+              final result = await _authService.login(email, password);
               if (result['success'] == true) {
                 final userData = result['data'];
                 final prefs = await SharedPreferences.getInstance();
-                await prefs.setInt(
-                    'customerId', userData['customerId']); // Lưu customerId
+                await prefs.setInt('customerId', userData['customerId']);
 
                 Get.offAll(() => MainScreen());
                 Get.snackbar(
-                  "Người dùng đăng nhập thành công",
+                  "Thành công",
                   "Đăng nhập thành công!",
                   backgroundColor: Colors.green,
                   colorText: AppConstant.appTextColor,

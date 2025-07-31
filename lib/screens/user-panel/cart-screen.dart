@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chichanka_perfume/controllers/cart-controller.dart';
 import 'package:chichanka_perfume/controllers/cart-price-controller.dart';
 import 'package:chichanka_perfume/models/cart-model.dart';
@@ -7,7 +8,6 @@ import 'package:chichanka_perfume/screens/user-panel/all-products-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/main-screen.dart';
 import 'package:chichanka_perfume/screens/user-panel/settings-screen.dart';
 import 'package:chichanka_perfume/utils/app-constant.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_swipe_action_cell/core/cell.dart';
 import 'package:get/get.dart';
@@ -143,7 +143,7 @@ class _CartScreenState extends State<CartScreen>
           _buildBottomBar(),
         ],
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: SizedBox(
         height: 70,
         child: Stack(
           children: [
@@ -231,18 +231,38 @@ class _CartScreenState extends State<CartScreen>
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Container(
+                      //   width: 80,
+                      //   height: 80,
+                      //   decoration: BoxDecoration(
+                      //     borderRadius: BorderRadius.circular(8),
+                      //     image: DecorationImage(
+                      //       image: NetworkImage(
+                      //           '$BASE_URL/${cartModel.productImages[0]}'),
+                      //       fit: BoxFit.cover,
+                      //     ),
+                      //   ),
+                      // ),
                       Container(
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
-                          image: DecorationImage(
-                            image: NetworkImage(
-                                '$BASE_URL/${cartModel.productImages[0]}'),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl:
+                                '$BASE_URL/${cartModel.productImages.isNotEmpty ? cartModel.productImages[0] : 'default.jpg'}',
                             fit: BoxFit.cover,
+                            placeholder: (context, url) =>
+                                const CircularProgressIndicator(),
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.error),
                           ),
                         ),
                       ),
+
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -305,30 +325,16 @@ class _CartScreenState extends State<CartScreen>
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(Icons.delivery_dining,
-                              size: 16, color: Colors.grey[600]),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Giao hàng: ${cartModel.deliveryTime}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 8),
-                      Text(
-                        cartModel.productDescription,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      // Text(
+                      //   cartModel.productDescription,
+                      //   style: TextStyle(
+                      //     fontSize: 14,
+                      //     color: Colors.grey[700],
+                      //   ),
+                      //   maxLines: 2,
+                      //   overflow: TextOverflow.ellipsis,
+                      // ),
                     ],
                   ),
                 ],
@@ -554,7 +560,7 @@ class _CartScreenState extends State<CartScreen>
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppConstant.appScendoryColor,
+              backgroundColor: AppConstant.appMainColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

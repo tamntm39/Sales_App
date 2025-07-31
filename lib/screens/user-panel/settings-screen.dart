@@ -51,7 +51,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _userModel = UserModel.fromMap({...data, 'userImg': fullImgUrl});
           });
         } else {
-          Get.snackbar("Lỗi", result['message'] ?? "Không thể tải thông tin người dùng");
+          Get.snackbar(
+              "Lỗi", result['message'] ?? "Không thể tải thông tin người dùng");
         }
       }
     } catch (e) {
@@ -108,7 +109,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 TextField(
                   controller: usernameController,
-                  decoration: const InputDecoration(labelText: "Tên người dùng"),
+                  decoration:
+                      const InputDecoration(labelText: "Tên người dùng"),
                 ),
                 TextField(
                   controller: phoneController,
@@ -165,7 +167,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Get.snackbar("Thành công", "Thông tin đã được cập nhật");
                       Navigator.pop(context);
                     } else {
-                      Get.snackbar("Lỗi", result['message'] ?? "Không thể cập nhật thông tin");
+                      Get.snackbar("Lỗi",
+                          result['message'] ?? "Không thể cập nhật thông tin");
                     }
                   }
                 } catch (e) {
@@ -201,9 +204,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://10.0.2.2:7072/api/Customer/UploadAvatar/UploadAvatar?customerId=$customerId'),
+        Uri.parse(
+            'http://10.0.2.2:7072/api/Customer/UploadAvatar/UploadAvatar?customerId=$customerId'),
       );
-      request.files.add(await http.MultipartFile.fromPath('avatar', _avatarImage!.path));
+      request.files
+          .add(await http.MultipartFile.fromPath('avatar', _avatarImage!.path));
       var response = await request.send();
 
       print('Status code: ${response.statusCode}');
@@ -281,15 +286,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ? FileImage(_avatarImage!)
                                   : (_userModel?.userImg != null &&
                                           _userModel!.userImg.isNotEmpty &&
-                                          _userModel!.userImg.startsWith('http'))
+                                          _userModel!.userImg
+                                              .startsWith('http'))
                                       ? NetworkImage(_userModel!.userImg)
-                                      : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
+                                      : const AssetImage(
+                                              'assets/images/default_avatar.png')
+                                          as ImageProvider,
                             ),
                             Positioned(
                               bottom: 0,
                               right: 0,
                               child: InkWell(
-                                onTap: _isUploadingAvatar ? null : _pickAvatarImage,
+                                onTap: _isUploadingAvatar
+                                    ? null
+                                    : _pickAvatarImage,
                                 child: CircleAvatar(
                                   radius: 16,
                                   backgroundColor: Colors.blue,
@@ -297,9 +307,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ? const SizedBox(
                                           width: 16,
                                           height: 16,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white),
                                         )
-                                      : const Icon(Icons.camera_alt, color: Colors.white, size: 18),
+                                      : const Icon(Icons.camera_alt,
+                                          color: Colors.white, size: 18),
                                 ),
                               ),
                             ),
@@ -382,7 +395,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: SizedBox(
         height: 70,
         child: Stack(
           children: [
@@ -392,7 +405,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               right: 0,
               child: CustomPaint(
                 size: Size(double.infinity, 70),
-                painter: BottomNavPainter(selectedIndex: _selectedIndex),
+                painter: BottomNavPainter(),
               ),
             ),
             Row(
@@ -479,12 +492,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-// Class BottomNavPainter
 class BottomNavPainter extends CustomPainter {
-  final int selectedIndex;
-
-  BottomNavPainter({required this.selectedIndex});
-
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
@@ -492,42 +500,17 @@ class BottomNavPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     Path path = Path();
-    double width = size.width;
-    double height = size.height;
-    double itemWidth = width / 3;
-    double circleRadius = 30;
-    double circleCenterX = itemWidth * selectedIndex + itemWidth / 2;
-
     path.moveTo(0, 0);
-    path.lineTo(circleCenterX - circleRadius, 0);
-    path.quadraticBezierTo(
-      circleCenterX - circleRadius / 2,
-      0,
-      circleCenterX - circleRadius / 2,
-      circleRadius / 2,
-    );
-    path.quadraticBezierTo(
-      circleCenterX,
-      circleRadius * 1.5,
-      circleCenterX + circleRadius / 2,
-      circleRadius / 2,
-    );
-    path.quadraticBezierTo(
-      circleCenterX + circleRadius / 2,
-      0,
-      circleCenterX + circleRadius,
-      0,
-    );
-    path.lineTo(width, 0);
-    path.lineTo(width, height);
-    path.lineTo(0, height);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
     path.close();
 
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // Cập nhật UserModel để hỗ trợ copyWith
@@ -547,7 +530,7 @@ extension UserModelExtension on UserModel {
     String? city,
   }) {
     return UserModel(
-      uId: this.uId,
+      uId: uId,
       username: username ?? this.username,
       email: email ?? this.email,
       phone: phone ?? this.phone,
