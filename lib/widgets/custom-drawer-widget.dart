@@ -81,7 +81,9 @@ print('DEBUG Drawer: customerId is null. User might not be logged in or data not
   // Hàm đăng xuất riêng biệt
   Future<void> _logout() async {
     try {
-      GoogleSignIn googleSignIn = GoogleSignIn();
+      GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email'],
+      );
       FirebaseAuth auth = FirebaseAuth.instance;
 
       // Đăng xuất khỏi Firebase (nếu đã đăng nhập qua Firebase)
@@ -270,3 +272,6 @@ if (Get.currentRoute != '/PersonalizedSuggestionsScreen') {
     );
   }
 }
+
+
+

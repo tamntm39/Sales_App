@@ -10,7 +10,7 @@ class GoogleSignInController extends GetxController {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email'],
-    clientId: '122754317810-s8g8tikvthd720j11eefl500s3j5lllo.apps.googleusercontent.com', // Đặt đúng clientId Web
+    //clientId: '122754317810-s8g8tikvthd720j11eefl500s3j5lllo.apps.googleusercontent.com', // Đặt đúng clientId Web
   );
 
   Future<void> signInWithGoogle() async {
