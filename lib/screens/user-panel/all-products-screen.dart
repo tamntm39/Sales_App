@@ -29,6 +29,10 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
   int _selectedIndex = 0;
   int _currentPage = 1;
   final int _itemsPerPage = 6;
+   final TextEditingController _minPriceController = TextEditingController();
+  final TextEditingController _maxPriceController = TextEditingController();
+  double? _activeMinPriceFilter; 
+  double? _activeMaxPriceFilter; 
 
   String formatPrice(num price) {
     final formatter = NumberFormat('#,###', 'vi_VN');
@@ -83,6 +87,31 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
     super.initState();
     fetchProducts();
   }
+   @override
+  void dispose() {
+    _minPriceController.dispose();
+    _maxPriceController.dispose();
+    super.dispose();
+  }
+  Future<void> fetchProductsByPrice(double? minPrice, double? maxPrice) async {
+  try {
+    final allProducts = await ProductService.fetchProducts();
+    setState(() {
+      products = allProducts.where((product) {
+        final price = product.priceOutput;
+        final matchMin = minPrice == null || price >= minPrice;
+        final matchMax = maxPrice == null || price <= maxPrice;
+        return matchMin && matchMax;
+      }).toList();
+      _currentPage = 1;
+    });
+  } catch (e) {
+    setState(() {
+      error = 'Lỗi khi lọc sản phẩm theo giá: $e';
+    });
+  }
+}
+
 
   Future<void> fetchProducts() async {
     setState(() {
@@ -145,6 +174,52 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                                   });
                                 },
                               ),
+                              Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _minPriceController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    hintText: 'Giá từ',
+                                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                    border: OutlineInputBorder(),
+                                    isDense: true, // Làm nhỏ lại
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextField(
+                                  controller: _maxPriceController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    hintText: 'Đến',
+                                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                    border: OutlineInputBorder(),
+                                    isDense: true, // Làm nhỏ lại
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  double? min = double.tryParse(_minPriceController.text);
+                                  double? max = double.tryParse(_maxPriceController.text);
+                                  await fetchProductsByPrice(min, max);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                ),
+                                child: Text('Lọc'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
                               const SizedBox(height: 10),
                               DropdownButton<String>(
                                 value: sortBy,

@@ -47,7 +47,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 children: [
                   SizedBox(height: Get.height / 20),
                   Text(
-                    "Chào mừng đến với Chichanka",
+                    "Chào mừng đến với Garden",
                     style: TextStyle(
                       color: AppConstant.navy,
                       fontWeight: FontWeight.bold,

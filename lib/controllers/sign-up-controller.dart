@@ -20,6 +20,7 @@ class SignUpController extends GetxController {
     String userPassword,
     String userDeviceToken,
   ) async {
+    print('DEBUG: signUpMethod called');
     try {
       EasyLoading.show(status: "Vui lòng chờ");
       UserCredential userCredential =
@@ -55,6 +56,7 @@ class SignUpController extends GetxController {
       EasyLoading.dismiss();
       return userCredential;
     } on FirebaseAuthException catch (e) {
+      print('DEBUG: FirebaseAuthException: ${e.code} - ${e.message}');
       EasyLoading.dismiss();
       String errorMessage;
       switch (e.code) {
@@ -83,6 +85,7 @@ class SignUpController extends GetxController {
       );
       return null; // Trả về null nếu có lỗi FirebaseAuthException
     } catch (e) {
+      print('DEBUG: Exception: $e');
       EasyLoading.dismiss();
       Get.snackbar(
         "Lỗi",
